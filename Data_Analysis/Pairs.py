@@ -1,103 +1,127 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from statsmodels.regression.linear_model import OLS
 from Data_Layer.DBManager import DBManager
 from Data_Layer import Timeframes as tf
 import statsmodels.tsa.stattools as sm
+from datetime import datetime, timedelta
+
+comission = 0.0003
 
 class Pairs:
-    def __init__(self, symbol_1 : str, symbol_2 : str, timeframe : str, big_window : int, small_window : int, offset = None):
+    def __init__(self, symbol_1 : str, symbol_2 : str, timeframe : str,
+                 date_from : datetime, date_to : datetime, small_window : int):
         self.symbol_1 = symbol_1
         self.symbol_2 = symbol_2
         self.timeframe = tf.Timeframe(timeframe)
-        self.big_window = big_window * self.timeframe.bars
-        self.small_window = small_window * self.timeframe.bars
-        self.offset = offset
-        self.df = self.pairs(self.symbol_1, self.symbol_2, self.timeframe, self.offset)
+        self.big_window_start = date_from
+        self.big_window_end = date_to
+        self.small_window = small_window
+        self.df = self.pairs(self.symbol_1, self.symbol_2, self.timeframe)
 
-    def pairs(self, symbol_1 : str, symbol_2 : str, timeframe : object, offset : int):
+    def pairs(self, symbol_1 : str, symbol_2 : str, timeframe : object):
         db = DBManager(self.timeframe.frame)
-        if offset == None:
-            query_1 = '''SELECT time, close FROM rates WHERE symbol = ? ORDER BY time DESC LIMIT ?'''
-            param_1 = [symbol_1, self.big_window]
-            query_2 = '''SELECT time, close FROM rates WHERE symbol = ? ORDER BY time DESC LIMIT ?'''
-            param_2 = [symbol_2, self.big_window]
-        else:
-            query_1 = '''SELECT time, close FROM rates WHERE symbol = ? ORDER BY time DESC LIMIT ? OFFSET ?'''
-            param_1 = [symbol_1, self.big_window, self.offset]
-            query_2 = '''SELECT time, close FROM rates WHERE symbol = ? ORDER BY time DESC LIMIT ? OFFSET ?'''
-            param_2 = [symbol_2, self.big_window,self.offset]
+
+        query = ("SELECT time, close FROM rates WHERE symbol = ? AND "
+                 "time BETWEEN ? AND ?"
+                 " AND TIME(time) BETWEEN '16:30:00' AND '23:00:00' ")
+        param_1 = [symbol_1, self.big_window_start, self.big_window_end]
+        param_2 = [symbol_2, self.big_window_start,self.big_window_end]
 
         with db.get_connection() as conn:
-            df_1 = pd.read_sql_query(query_1, conn, params=param_1)
-            df_2 = pd.read_sql_query(query_2, conn, params=param_2)
+            df_1 = pd.read_sql_query(query, conn, params=param_1)
+            df_2 = pd.read_sql_query(query, conn, params=param_2)
 
-        df_pairs = pd.merge(df_1, df_2, on='time', how='inner')
+        df_pairs = pd.merge(df_1, df_2, on='time', how='outer').ffill().bfill()
         df_pairs = df_pairs.rename(columns={'close_x': symbol_1, 'close_y': symbol_2})
-        df_pairs = df_pairs.iloc[::-1].reset_index(drop=True)
         return df_pairs
 
     def cointegration(self,):
-        coint_t, p_value, critical_values = sm.coint(self.df[self.symbol_1], self.df[self.symbol_2])
-        return p_value
+        try:
+            coint_t, p_value, critical_values = sm.coint(self.df[self.symbol_1], self.df[self.symbol_2])
+            return p_value
+        except Exception as e:
+            print(f'Error in cointegration: {e}')
 
     def coef (self):
-        df = self.df.tail(self.small_window).copy()
-        symbol_2_with_intercept = sm.add_constant(df[self.symbol_2])
-        model = sm.OLS(df[self.symbol_1], symbol_2_with_intercept).fit()
-        intercept = model.params['const']
-        slope = model.params[self.symbol_2]
-        return [intercept, slope]
+        df = self.df
+        if df.empty:
+            print ('No data!')
+        model = sm.OLS(df[self.symbol_1], df[self.symbol_2]).fit()
+        hedge_ratio = model.params[self.symbol_2]
+        return hedge_ratio
 
     def spread(self):
         df = self.df.copy()
-        df['Spread'] = df[self.symbol_1] - (df[self.symbol_2] * self.coef()[1] + self.coef()[0])
+        df['Spread'] = df[self.symbol_1] - (df[self.symbol_2] * self.coef())
         return df
 
     def z_score(self):
-        df = self.spread().tail(self.small_window*2).copy()
-        df['Spread_mean'] = df['Spread'].rolling(window=self.small_window).mean()
-        df['Spread_std'] = df['Spread'].rolling(window=self.small_window).std()
+        df = self.spread().copy()
+        df = df[df['time'].between(datetime.strftime(
+            self.big_window_end - timedelta(minutes = 2 * self.small_window),'%Y-%m-%d %H:%M:%S'),
+            self.big_window_end.strftime('%Y-%m-%d %H:%M:%S'))]
+        df['Spread_mean'] = df['Spread'].rolling(window=df.shape[0]//2).mean()
+        df['Spread_std'] = df['Spread'].rolling(window=df.shape[0]//2).std()
         df['Z-Score'] = (df['Spread'] - df['Spread_mean']) / df['Spread_std']
         df.dropna(inplace=True)
-        df['Sign'] = np.sign(df['Z-Score'])
-        df['Zero_Cross'] = df['Sign'].diff().ne(0)
-        return df.tail(self.small_window)
+        return df[df['time'].between(datetime.strftime
+            (self.big_window_end - timedelta(days = self.small_window),
+             '%Y-%m-%d %H:%M'), self.df['time'].iloc[-1])]
 
-    def backtest(self, lot : float, z_trig : float, z_sl : float):
-        return self.backtesting(self, lot, z_trig, z_sl)
+    def half_time(self):
+        df = self.spread().copy()
+        dz = df['Spread'].diff().dropna().values
+        spread_dev = (df['Spread'] - df['Spread'].mean()).shift(1).dropna().values
+        model = sm.OLS(dz, spread_dev).fit()
+        theta = model.params[0]
+        half_time = np.log(2) / theta
+
+        return abs(round(half_time,0)) # half time
+
+    def backtest(self, lot : float, z_open : float):
+        return self.backtesting(self, lot, z_open)
 
     class backtesting:
-        def __init__(self, pairs_instance, lot : float, z_trig : float, z_sl : float):
+        def __init__(self, pairs_instance, lot : float, z_open : float):
             self.parent = pairs_instance
             self.lot = lot
-            self.z_trig = z_trig
-            self.z_sl = z_sl
-            self.df = self.bt(self.lot, self.z_trig, self.z_sl)
+            self.z_open = z_open
+            self.z_close = z_open * 0.2
+            self.df = self.bt(self.lot, self.z_open, self.z_close)
 
-        def bt (self, lot, z_trig, z_sl):
+        def bt (self, lot, z_open, z_close):
             df = self.parent.z_score().copy()
-            slope = self.parent.coef()[1]
+            slope = self.parent.coef()
             signals = []
+            bars_count = 0
             current_state = 0
             for i in range(len(df)):
                 z = df['Z-Score'].iloc[i]
 
                 if current_state == 0:
-                    if z >= z_trig: current_state = -1
-                    if z <= -z_trig: current_state = 1
-                elif current_state == 1  and z >= -z_sl:
+                    if z >= z_open: current_state = -1 # Short
+                    if z <= -z_open: current_state = 1 # Long
+                elif current_state == 1  and z >= z_close:
                     current_state = 0
-                elif current_state == -1  and z <= z_sl:
+                    bars_count = 0
+                elif current_state == -1  and z <= z_close:
                     current_state = 0
+                    bars_count = 0
+                elif current_state == -1 or current_state == 1:
+                    bars_count += 1
+                if bars_count >= 3 * self.parent.half_time():
+                    current_state = 0
+                    bars_count = 0
 
                 signals.append(current_state)
             df['positions'] = signals
 
-            df[f'PnL ({self.parent.symbol_1})'] = df['positions'].shift(1) * df[self.parent.symbol_1].diff() * lot * 100000
-            df[f'PnL ({self.parent.symbol_2})'] = -df['positions'].shift(1) * df[self.parent.symbol_2].diff() * lot * slope * 100000
+            df[f'PnL ({self.parent.symbol_1})'] = df['positions'].shift(1) * df[self.parent.symbol_1].diff() * lot * 100
+            df[f'PnL ({self.parent.symbol_2})'] = -df['positions'].shift(1) * df[self.parent.symbol_2].diff() * lot * slope * 100
             df['PnL'] = df[f'PnL ({self.parent.symbol_1})'] + df[f'PnL ({self.parent.symbol_2})']
-            df['PnL'] = df['PnL'].cumsum()
+            df.dropna(inplace=True)
             return df
 
         def pnl(self):
@@ -169,36 +193,12 @@ class Pairs:
             )
             fig.show()
 
-    def half_time(self):
-        df = self.z_score().copy()
-        dt = 1.0
-        Y = df['Spread'].iloc[1:].values
-        X = df['Spread'].iloc[:-1].values
-        X_with_const = sm.add_constant(X)
-        model = sm.OLS(Y, X_with_const).fit()
-        if model.pvalues[1] > 0.05:
-            raise ValueError(f'Mean revertion is impossible: no cointegration')
-
-        a = model.params[0]
-        b = model.params[1]
-        std_residuals = np.std(model.resid)
-
-        if b >= 1.0 or b <= 0:
-            raise ValueError(f'Mean revertion is impossible: b = {b}')
-
-        theta = -np.log(b) / dt
-        mu = a / (1 - b)
-        sigma = np.sqrt((-2 * np.log(b)) / (dt * (1 - b ** 2)))
-        half_time = np.log(2) / theta
-
-        return round(24 * half_time/self.timeframe.bars,2) # half time in hours
-
     def spread_plot(self):
         df = self.spread().copy()
         df["time"] = pd.to_datetime(df["time"])
 
         title_text = (
-            f"Spread {self.symbol_1} / {self.symbol_2} [{self.timeframe.frame}] for {int(self.big_window/self.timeframe.bars)} days"
+            f"Spread {self.symbol_1} / {self.symbol_2} [{self.timeframe.frame}]"
         )
 
         fig = go.Figure()
@@ -271,7 +271,7 @@ class Pairs:
         df["time"] = pd.to_datetime(df["time"])
 
         title_text = (
-            f"Z-Score {self.symbol_1} / {self.symbol_2} [{self.timeframe.frame}] for {int(self.small_window/self.timeframe.bars)} days"
+            f"Z-Score {self.symbol_1} / {self.symbol_2} [{self.timeframe.frame}] for {self.small_window} days"
         )
 
         fig = go.Figure()
@@ -338,3 +338,10 @@ class Pairs:
         )
 
         fig.show()
+
+
+# pairs = Pairs('NVDA','BAC','M1',
+#               datetime(2026, 1, 12, 19, 00, 00),
+#               datetime(2026, 1, 12, 20, 00, 00),
+#               30)
+# print(pairs.coef())

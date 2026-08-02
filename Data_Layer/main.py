@@ -4,12 +4,10 @@ import DBManager as dbm
 import MetaTrader5 as mt5
 import pandas as pd
 from MT5 import MT5_Provider
-
+from data_update import *
+from datetime import datetime
 
 def main():
-
-    symbol_1 = 'GBPUSD'
-    symbol_2 = 'EURUSD'
 
     print("Loading data...")
 
@@ -17,13 +15,12 @@ def main():
 
     print("Data are loaded")
     print("==========================================================")
-    pairs = Pairs(symbol_1,symbol_2,'M30', 126, 40)
-    if pairs.cointegration() <= 0.05:
-        print(f'p-value = {pairs.cointegration():.4f}')
-        print(f'Pairs {symbol_1} and {symbol_2} are cointegrated')
-
-    print (f'alfa = {pairs.coef()[0]}')
-    print (f'beta = {pairs.coef()[1]}')
-    pairs.z_score_plot()
-
+    # pairs = Pairs(symbol_1,symbol_2,'M30', 126, 40)
+    # if pairs.cointegration() <= 0.05:
+    #     print(f'p-value = {pairs.cointegration():.4f}')
+    #     print(f'Pairs {symbol_1} and {symbol_2} are cointegrated')
+    #
+    # print (f'alfa = {pairs.coef()[0]}')
+    # print (f'beta = {pairs.coef()[1]}')
+    # pairs.z_score_plot()
 main()

@@ -6,7 +6,6 @@ class DBManager:
     def __init__(self, timeframe: str):
         self.timeframe = Timeframe(timeframe)
         self.db_path = "C:/Users/gorn9/PycharmProjects/Hedge_bot_(Pairs Trading)/Data_Layer/" + self.timeframe.db_name
-                # 'Hedge_bot_(Pairs_Trading)/Data_Layer/' + db_name
         self.create_table()
 
     def get_connection(self):
