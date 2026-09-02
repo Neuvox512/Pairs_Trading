@@ -15,8 +15,8 @@ stocks_list = ['GOOGL', 'MSFT', 'IBM', 'VZ', 'INTC', 'HPE', 'EA', 'ORCL', 'NVDA'
                'CVX', 'NEM', 'JPM', 'BAC', 'C', 'WFC', 'V', 'GS', 'PYPL', 'PRU', 'BRK.B', 'AAPL', 'KO',
                'PEP', 'PG', 'PM', 'NKE', 'GM', 'GE', 'MMM', 'CAT', 'BA', 'JNJ', 'PFE', 'LLY', 'META']
 
-start = datetime(2026, 2, 18, 16, 30, 00)
-end = datetime(2026, 2, 18, 22, 30, 00)
+start = datetime(2026, 4, 24, 16, 30, 00)
+end = datetime(2026, 4, 24, 22, 30, 00)
 small_window = 30 #30 min
 
 
