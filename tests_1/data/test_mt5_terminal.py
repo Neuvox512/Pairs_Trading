@@ -1,5 +1,5 @@
 from src.data.mt5_terminal import MT5Terminal
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def test_fetch_bars_from_mt5() -> None:
@@ -8,8 +8,8 @@ def test_fetch_bars_from_mt5() -> None:
 
     try:
         bars = terminal.fetch_bars(symbol = "JPM",
-                            start_time = datetime(2026, 2, 9, 17,30),
-                            end_time = datetime(2026, 2, 9, 17,31),
+                            start_time = datetime(2026, 2, 9, 16,30, tzinfo = timezone.utc),
+                            end_time = datetime(2026, 2, 9, 16,31, tzinfo = timezone.utc),
                             )
         print(bars)
     finally:

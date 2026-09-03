@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 import pandas as pd
 
-class sqliteDB:
+class SQLiteDB:
     def __init__(self, db_path : Path) -> None:
         self.db_path = Path(db_path)
 

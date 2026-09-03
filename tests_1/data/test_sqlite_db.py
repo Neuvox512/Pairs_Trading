@@ -1,4 +1,4 @@
-from src.data.sqlite_db import sqliteDB
+from src.data.sqlite_db import SQLiteDB
 import pandas as pd
 import pytest
 
@@ -20,7 +20,7 @@ def sim_bars():
 
 def test_sqlite_db(tmp_path) -> None:
     db_path = tmp_path / "test_db.db"
-    db = sqliteDB(db_path)
+    db = SQLiteDB(db_path)
     db.create_table()
 
     with db.connect() as conn:
@@ -35,7 +35,7 @@ def test_sqlite_db(tmp_path) -> None:
 
 def test_save_bars(tmp_path, sim_bars) -> None:
     db_path = tmp_path / "test_db.db"
-    db = sqliteDB(db_path)
+    db = SQLiteDB(db_path)
     db.create_table()
 
     db.save_bars('JPM', 'M1', sim_bars)
@@ -49,7 +49,7 @@ def test_save_bars(tmp_path, sim_bars) -> None:
 
 def test_load_bars(tmp_path, sim_bars) -> None:
     db_path = tmp_path / "test_db.db"
-    db = sqliteDB(db_path)
+    db = SQLiteDB(db_path)
     db.create_table()
 
     db.save_bars('JPM', 'M1', sim_bars)
