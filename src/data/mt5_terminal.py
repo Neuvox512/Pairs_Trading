@@ -21,11 +21,12 @@ class MT5Terminal:
 
         bars = pd.DataFrame(rates)
         bars['time'] = pd.to_datetime(bars['time'], unit='s', utc=True)
+        bars = bars.rename(columns={'time': 'time_utc'})
 
         return bars
 
+
 terminal = MT5Terminal()
 terminal.connect()
-print(terminal.fetch_bars('JPM',
-                          start_time=datetime(2026, 2, 9, 16, 30),
-                          end_time=datetime(2026, 2, 9, 17, 30)))
+print(terminal.fetch_bars('JPM', start_time = datetime(2026, 2, 9, 17,30),
+                            end_time = datetime(2026, 2, 9, 17,31),).transpose())
