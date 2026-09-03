@@ -1,14 +1,12 @@
 from datetime import datetime
 import pandas as pd
 import MetaTrader5 as mt5
-from pandas import to_datetime
-from pygments.formatters import terminal
 
 
 class MT5Terminal:
     def connect(self) -> None:
         if not mt5.initialize():
-            raise RuntimeError('Could not connect to MT5 {mt5.last_error()}')
+            raise RuntimeError(f'Could not connect to MT5 {mt5.last_error()}')
 
     def close(self) -> None:
         mt5.shutdown()
@@ -17,7 +15,7 @@ class MT5Terminal:
         rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, start_time, end_time)
 
         if rates is None:
-            raise RuntimeError('Could not fetch rates for {symbol}: {mt5.last_error()}')
+            raise RuntimeError(f'Could not fetch rates for {symbol}: {mt5.last_error()}')
 
         bars = pd.DataFrame(rates)
         bars['time'] = pd.to_datetime(bars['time'], unit='s', utc=True)
@@ -26,7 +24,16 @@ class MT5Terminal:
         return bars
 
 
-terminal = MT5Terminal()
-terminal.connect()
-print(terminal.fetch_bars('JPM', start_time = datetime(2026, 2, 9, 17,30),
-                            end_time = datetime(2026, 2, 9, 17,31),).transpose())
+if __name__ == "__main__":
+    terminal = MT5Terminal()
+    terminal.connect()
+
+    try:
+        bars = terminal.fetch_bars(
+            "JPM",
+            start_time=datetime(2026, 2, 9, 17, 30),
+            end_time=datetime(2026, 2, 9, 17, 31),
+        )
+        print(bars.transpose())
+    finally:
+        terminal.close()
