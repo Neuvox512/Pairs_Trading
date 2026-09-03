@@ -1,9 +1,6 @@
 import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
-from zoneinfo import ZoneInfo
-
-from Data_Layer.DBManager import DBManager
 
 
 class MT5_Provider:

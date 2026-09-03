@@ -20,7 +20,7 @@ def update_pair(symbol: str, timeframe):
         last_local_time = local_data['time'].iloc[0]
         actual_time = pd.to_datetime(data_from_mt5.iloc[0]['time'], unit='s')
         if last_local_time == actual_time:
-            print("Data are already up-to-date!")
+            print("data are already up-to-date!")
             provider.close_connection()
             return
         else:

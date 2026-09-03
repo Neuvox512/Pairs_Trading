@@ -18,7 +18,7 @@ def update_pair(symbol: str, timeframe):
     time_delta = int(((datetime.now(ZoneInfo("Europe/Bucharest")) - last_time).total_seconds() / 60 // timeframe.id) + timeframe.id)
 
     if time_delta <= 1:
-        print("Data are already up-to-date!")
+        print("data are already up-to-date!")
         provider.close_connection()
         return
     else:

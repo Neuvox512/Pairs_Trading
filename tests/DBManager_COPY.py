@@ -1,6 +1,6 @@
 import sqlite3
 import pandas as pd
-from Data_Layer.Timeframes import Timeframe
+from src.Data_Layer.Timeframes import Timeframe
 
 class DBManager:
     def __init__(self, timeframe: str):

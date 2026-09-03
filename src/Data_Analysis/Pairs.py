@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from statsmodels.regression.linear_model import OLS
-from Data_Layer.DBManager import DBManager
-from Data_Layer import Timeframes as tf
+from src.Data_Layer.DBManager import DBManager
+from src.Data_Layer import Timeframes as tf
 import statsmodels.tsa.stattools as sm
 from datetime import datetime, timedelta
 

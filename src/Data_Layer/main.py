@@ -1,11 +1,5 @@
 import data_update as dup
-from Data_Analysis.Pairs import Pairs
-import DBManager as dbm
-import MetaTrader5 as mt5
-import pandas as pd
-from MT5 import MT5_Provider
-from data_update import *
-from datetime import datetime
+
 
 def main():
 
@@ -13,7 +7,7 @@ def main():
 
     dup.mass_update()
 
-    print("Data are loaded")
+    print("data are loaded")
     print("==========================================================")
     # pairs = Pairs(symbol_1,symbol_2,'M30', 126, 40)
     # if pairs.cointegration() <= 0.05:

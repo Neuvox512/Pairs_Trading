@@ -1,12 +1,6 @@
-from Pairs import Pairs
 import pandas as pd
-import datetime
-from Data_Analysis.Coint_pairs import recursive_test_pairs
 from Pairs import Pairs
-import MetaTrader5 as mt5
 from datetime import datetime, timedelta
-from Coint_pairs import coint_pairs_3
-import numpy as np
 from tqdm import tqdm
 
 
