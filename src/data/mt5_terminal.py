@@ -37,6 +37,7 @@ if __name__ == "__main__":
     try:
         bars = terminal.fetch_bars(
             "JPM",
+            timeframe="M1",
             start_time=datetime(2026, 2, 9, 17, 30),
             end_time=datetime(2026, 2, 9, 17, 31),
         )

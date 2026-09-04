@@ -14,12 +14,12 @@ def test_update_data(tmp_path, sim_bars):
     terminal = MT5Terminal()
     terminal.connect()
 
-    raw_count = update_data(terminal, db, symbol="JPM", timeframe="M1", start_time=start_time, end_time=end_time)
+    updated_count = update_data(terminal, db, symbol="JPM", timeframe="M1", start_time=start_time, end_time=end_time)
     latest_bar_from_db = db.get_latest_bar(symbol="JPM", timeframe="M1")
 
     bars_from_mt5 = terminal.fetch_bars(symbol="JPM", timeframe="M1", start_time=start_time, end_time=end_time)
     latest_bar_from_mt5 = pd.to_datetime(bars_from_mt5['time_utc'].iloc[-1])
 
+    assert updated_count > 0
     assert latest_bar_from_db is not None
-    assert latest_bar_from_mt5 is not None
     assert latest_bar_from_db == latest_bar_from_mt5

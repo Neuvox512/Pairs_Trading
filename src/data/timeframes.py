@@ -6,5 +6,3 @@ MT5_TIMEFRAMES = {
     "M5": mt5.TIMEFRAME_M5,
     "M15": mt5.TIMEFRAME_M15
 }
-
-print(type(MT5_TIMEFRAMES['M1']))
