@@ -1,6 +1,7 @@
 from datetime import datetime
 import pandas as pd
 import MetaTrader5 as mt5
+from src.data.timeframes import MT5_TIMEFRAMES
 
 
 class MT5Terminal:
@@ -11,8 +12,13 @@ class MT5Terminal:
     def close(self) -> None:
         mt5.shutdown()
 
-    def fetch_bars(self, symbol: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
-        rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, start_time, end_time)
+    def fetch_bars(self,
+                   symbol: str,
+                   timeframe : str,
+                   start_time: datetime,
+                   end_time: datetime) -> pd.DataFrame:
+
+        rates = mt5.copy_rates_range(symbol, MT5_TIMEFRAMES[timeframe], start_time, end_time)
 
         if rates is None:
             raise RuntimeError(f'Could not fetch rates for {symbol}: {mt5.last_error()}')

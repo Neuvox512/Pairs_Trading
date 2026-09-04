@@ -112,4 +112,14 @@ class SQLiteDB:
 
         return bars
         
-        
+
+    def get_latest_bar(self, symbol : str, timeframe : str) -> pd.Timestamp | None:
+        query = """SELECT MAX(time_utc) FROM bars WHERE symbol = ? AND timeframe = ?"""
+
+        with self.connect() as conn:
+            latest_bar = conn.execute(query, (symbol, timeframe)).fetchone()[0]
+
+        if latest_bar is None:
+            return None
+
+        return pd.to_datetime(latest_bar, unit = 's', utc = True)

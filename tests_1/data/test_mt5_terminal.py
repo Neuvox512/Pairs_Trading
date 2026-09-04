@@ -8,10 +8,10 @@ def test_fetch_bars_from_mt5() -> None:
 
     try:
         bars = terminal.fetch_bars(symbol = "JPM",
+                            timeframe = "M1",
                             start_time = datetime(2026, 2, 9, 16,30, tzinfo = timezone.utc),
                             end_time = datetime(2026, 2, 9, 16,31, tzinfo = timezone.utc),
                             )
-        print(bars)
     finally:
         terminal.close()
 
