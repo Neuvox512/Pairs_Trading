@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from pathlib import Path
 from src.data.data_updater import update_all_symbols
 from src.data.mt5_terminal import MT5Terminal
@@ -12,11 +11,8 @@ def main() -> None:
 
     all_symbols = terminal.get_all_symbols()
 
-    start_time = datetime(2026, 2, 9, 17, 30)
-    end_time = datetime(2026, 2, 9, 17, 31)
-
     try:
-        updated_bars = update_all_symbols(terminal, db, all_symbols, 'M1', start_time, end_time)
+        updated_bars = update_all_symbols(terminal, db, all_symbols, 'M1')
     finally:
         terminal.close()
 

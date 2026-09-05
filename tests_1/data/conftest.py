@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-from src.data.sqlite_db import SQLiteDB
 
 @pytest.fixture
 def sim_bars() -> pd.DataFrame:

@@ -47,7 +47,7 @@ def test_get_last_bar(tmp_path, sim_bars) -> None:
     db.create_table()
     db.save_bars('JPM', 'M1', sim_bars)
 
-    latest_bar = db.get_latest_bar('JPM', 'M1')
+    latest_bar = db.get_latest_bar_time('JPM', 'M1')
     print(latest_bar)
 
     assert latest_bar is not None

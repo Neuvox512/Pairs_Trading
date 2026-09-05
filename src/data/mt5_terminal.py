@@ -40,18 +40,15 @@ class MT5Terminal:
         return all_symbols
 
 
+    def get_latest_closed_bar_time(self, symbol: str, timeframe: str,) -> None | pd.Timestamp:
+        rates = mt5.copy_rates_from_pos(symbol, MT5_TIMEFRAMES[timeframe], 1, 1)
 
-if __name__ == "__main__":
-    terminal = MT5Terminal()
-    terminal.connect()
+        if rates is None:
+            raise RuntimeError(f'Could not fetch rates for {symbol}: {mt5.last_error()}')
 
-    try:
-        bars = terminal.fetch_bars(
-            "JPM",
-            timeframe="M1",
-            start_time=datetime(2026, 2, 9, 17, 30),
-            end_time=datetime(2026, 2, 9, 17, 31),
-        )
-        print(bars.transpose())
-    finally:
-        terminal.close()
+        if len(rates) == 0:
+            return None
+
+        return pd.to_datetime(rates[0]['time'], unit='s', utc=True)
+
+
