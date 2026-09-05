@@ -1,6 +1,8 @@
 import sqlite3
 from pathlib import Path
 import pandas as pd
+from datetime import datetime
+
 
 class SQLiteDB:
     def __init__(self, db_path : Path) -> None:
@@ -87,7 +89,10 @@ class SQLiteDB:
         return len(bars_to_save)
 
 
-    def load_bars(self, symbol : str, timeframe : str) -> pd.DataFrame:
+    def load_bars(self, symbol: str, timeframe: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
+        start_time = int(start_time.timestamp())
+        end_time = int(end_time.timestamp())
+
         query = """
         SELECT 
             symbol,
@@ -101,12 +106,14 @@ class SQLiteDB:
             spread,
             real_volume
         FROM bars 
-        WHERE symbol = ? AND timeframe = ?
+        WHERE symbol = ? 
+            AND timeframe = ?
+            AND time_utc BETWEEN ? AND ?
         ORDER BY time_utc
         """
 
         with self.connect() as conn:
-            bars = pd.read_sql_query(query,conn, params = (symbol, timeframe))
+            bars = pd.read_sql_query(query,conn, params = (symbol, timeframe, start_time, end_time))
 
         bars['time_utc'] = pd.to_datetime(bars['time_utc'], unit = 's', utc = True)
 

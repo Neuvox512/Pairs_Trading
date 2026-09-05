@@ -34,8 +34,11 @@ def test_load_bars(tmp_path, sim_bars) -> None:
     db = SQLiteDB(db_path)
     db.create_table()
 
+    start_time = sim_bars['time_utc'].iloc[-2]
+    end_time = sim_bars['time_utc'].iloc[-1]
+
     db.save_bars('JPM', 'M1', sim_bars)
-    loaded_bars = db.load_bars('JPM', 'M1')
+    loaded_bars = db.load_bars('JPM', 'M1', start_time=start_time, end_time=end_time)
 
     assert len(loaded_bars) == 2
     assert (loaded_bars['time_utc'] == sim_bars['time_utc']).all()
