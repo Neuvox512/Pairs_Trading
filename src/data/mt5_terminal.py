@@ -30,6 +30,17 @@ class MT5Terminal:
         return bars
 
 
+    def get_all_symbols(self) -> list:
+        symbols = mt5.symbols_get()
+        all_symbols = []
+        for symbol in symbols:
+            path = symbol.path.lower()
+            if 'stock' in path:
+                all_symbols.append(symbol.name)
+        return all_symbols
+
+
+
 if __name__ == "__main__":
     terminal = MT5Terminal()
     terminal.connect()

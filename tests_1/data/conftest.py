@@ -1,8 +1,9 @@
 import pytest
 import pandas as pd
+from src.data.sqlite_db import SQLiteDB
 
 @pytest.fixture
-def sim_bars():
+def sim_bars() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "time_utc" : pd.to_datetime(["2026-02-09 16:30:00", "2026-02-09 16:31:00"], utc = True),
