@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 DEFAULT_HISTORY_START = datetime(year=2025, month=1, day=1, tzinfo=timezone.utc)
 
+
 def update_symbol(terminal : MT5Terminal,
                  database : SQLiteDB,
                  symbol : str,
