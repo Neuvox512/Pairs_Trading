@@ -30,7 +30,7 @@ class MT5Terminal:
         return bars
 
 
-    def get_all_symbols(self) -> list:
+    def get_all_symbols(self) -> list[str]:
         symbols = mt5.symbols_get()
         all_symbols = []
         for symbol in symbols:
