@@ -6,3 +6,9 @@ MT5_TIMEFRAMES = {
     "M5": mt5.TIMEFRAME_M5,
     "M15": mt5.TIMEFRAME_M15
 }
+
+TIME_FREQUENCIES = {
+    "M1": '1min',
+    "M5": '5min',
+    "M15": '15min'
+}

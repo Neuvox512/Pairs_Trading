@@ -55,3 +55,22 @@ def test_get_last_bar(tmp_path, sim_bars) -> None:
 
     assert latest_bar is not None
     assert latest_bar == sim_bars['time_utc'].iloc[-1]
+
+
+def test_load_close_prices(tmp_path, sim_bars) -> None:
+    database = SQLiteDB(tmp_path / "test_db.db")
+    database.create_table()
+    database.save_bars("JPM", "M1", sim_bars)
+
+    start_time = sim_bars["time_utc"].iloc[-2]
+    end_time = sim_bars["time_utc"].iloc[-1]
+
+    close_prices = database.load_close_prices(
+        symbols=["JPM"],
+        timeframe="M1",
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    assert len(close_prices) == 2
+    assert list(close_prices.columns) == ["JPM"]

@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 import pandas as pd
 from datetime import datetime
-
+from src.data.timeframes import TIME_FREQUENCIES
 
 class SQLiteDB:
     def __init__(self, db_path : Path) -> None:
@@ -90,8 +90,8 @@ class SQLiteDB:
 
 
     def load_bars(self, symbol: str, timeframe: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
-        start_time = int(start_time.timestamp())
-        end_time = int(end_time.timestamp())
+        start_timestamp = int(start_time.timestamp())
+        end_timestamp = int(end_time.timestamp())
 
         query = """
         SELECT 
@@ -113,14 +113,14 @@ class SQLiteDB:
         """
 
         with self.connect() as conn:
-            bars = pd.read_sql_query(query,conn, params = (symbol, timeframe, start_time, end_time))
+            bars = pd.read_sql_query(query, conn, params = (symbol, timeframe, start_timestamp, end_timestamp))
 
         bars['time_utc'] = pd.to_datetime(bars['time_utc'], unit = 's', utc = True)
 
         return bars
         
 
-    def get_latest_bar_time(self, symbol : str, timeframe : str) -> pd.Timestamp | None:
+    def get_latest_bar_time(self, symbol : str, timeframe : str) -> datetime | None:
         query = """SELECT MAX(time_utc) FROM bars WHERE symbol = ? AND timeframe = ?"""
 
         with self.connect() as conn:
@@ -130,3 +130,34 @@ class SQLiteDB:
             return None
 
         return pd.to_datetime(latest_bar, unit = 's', utc = True)
+
+
+    def load_close_prices(self, symbols : list[str],
+                          timeframe : str,
+                          start_time: datetime,
+                          end_time: datetime) -> pd.DataFrame:
+        start_timestamp = int(start_time.timestamp())
+        end_timestamp = int(end_time.timestamp())
+        placeholders = ', '.join(['?'] * len(symbols))
+        query = f"""
+        SELECT 
+            symbol, 
+            time_utc, 
+            close 
+        FROM bars 
+        WHERE symbol IN ({placeholders}) AND timeframe = ? AND time_utc BETWEEN ? AND ?
+        ORDER BY time_utc
+        """
+        params = (*symbols, timeframe, start_timestamp, end_timestamp)
+
+        with self.connect() as conn:
+            bars = pd.read_sql_query(query, conn, params = params)
+
+        bars['time_utc'] = pd.to_datetime(bars['time_utc'], unit = 's', utc = True)
+        close_prices = bars.pivot(columns ='symbol', index ='time_utc', values ='close')
+
+        expected_times = pd.date_range(start_time, end_time, freq = TIME_FREQUENCIES[timeframe])
+        close_prices = close_prices.reindex(expected_times)
+        close_prices.index.name = 'time_utc'
+
+        return close_prices
