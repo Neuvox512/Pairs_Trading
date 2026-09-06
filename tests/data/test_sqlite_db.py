@@ -51,7 +51,6 @@ def test_get_last_bar(tmp_path, sim_bars) -> None:
     db.save_bars('JPM', 'M1', sim_bars)
 
     latest_bar = db.get_latest_bar_time('JPM', 'M1')
-    print(latest_bar)
 
     assert latest_bar is not None
     assert latest_bar == sim_bars['time_utc'].iloc[-1]
