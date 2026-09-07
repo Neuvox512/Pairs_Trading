@@ -14,6 +14,18 @@ def integration_p_values(symbol_prices : pd.Series) -> tuple[float, float]:
     return prices_stationarity_p_value, diff_stationarity_p_value
 
 
+def select_i1_symbols(close_prices : pd.DataFrame, significance_level : float = 0.05) -> list[str]:
+    selected_symbols = []
+
+    for symbol in close_prices.columns:
+        price_stationarity_p_value, diff_stationarity_p_value = integration_p_values(close_prices[symbol])
+        if (price_stationarity_p_value > significance_level
+            and diff_stationarity_p_value < significance_level):
+            selected_symbols.append(symbol)
+
+    return selected_symbols
+
+
 def cointegration_p_value(first_symbol_close : pd.Series, second_symbol_close : pd.Series) -> float:
     pair = pd.concat([first_symbol_close, second_symbol_close], axis="columns").dropna()
 

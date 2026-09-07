@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from src.analysis.cointegration import integration_p_values, cointegration_p_value
+from src.analysis.cointegration import integration_p_values, cointegration_p_value, select_i1_symbols
 
 
 def test_integration_p_values() -> None:
@@ -9,21 +9,36 @@ def test_integration_p_values() -> None:
 
     first_symbol_cl_prices = pd.Series(100 + random_gen.normal(size=250).cumsum(),
                                        index=time_index)
-    first_symbol_p_value = integration_p_values(first_symbol_cl_prices)
+    first_symbol_p_values = integration_p_values(first_symbol_cl_prices)
 
     second_symbol_cl_prices = pd.Series(50 + 2 * first_symbol_cl_prices + random_gen.normal(size=250, scale=0.5),
                                         index=time_index)
-    second_symbol_p_value = integration_p_values(second_symbol_cl_prices)
+    second_symbol_p_values = integration_p_values(second_symbol_cl_prices)
 
-    assert first_symbol_p_value[0] > 0.05
-    assert first_symbol_p_value[1] < 0.05
-    assert second_symbol_p_value[0] > 0.05
-    assert second_symbol_p_value[1] < 0.05
+    assert first_symbol_p_values[0] > 0.05
+    assert first_symbol_p_values[1] < 0.05
+    assert second_symbol_p_values[0] > 0.05
+    assert second_symbol_p_values[1] < 0.05
+
+
+def test_select_i1_symbols() -> None:
+    random_gen = np.random.RandomState(0)
+    time_index = pd.date_range(start='2026-08-02', periods=250, freq='1min', tz='UTC')
+
+    first_symbol_cl_prices = pd.Series(100 + random_gen.normal(size=250).cumsum(),
+                                       index=time_index)
+
+    second_symbol_cl_prices = pd.Series(50 + 2*first_symbol_cl_prices + random_gen.normal(size=250, scale=0.5),
+                                        index=time_index)
+
+    pair = pd.concat([first_symbol_cl_prices, second_symbol_cl_prices], axis=1)
+    selected_symbols = select_i1_symbols(pair)
+
+    assert len(selected_symbols) == 2
 
 
 def test_cointegration_p_value() -> None:
     random_gen = np.random.RandomState(0)
-
     time_index = pd.date_range(start='2026-08-02', periods=250, freq='1min', tz='UTC')
 
     first_symbol_cl_prices = pd.Series(100 + random_gen.normal(size=250).cumsum(),
