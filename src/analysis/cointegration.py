@@ -1,7 +1,7 @@
 import pandas as pd
 from statsmodels.tsa.stattools import coint, adfuller
 
-
+#Condition for cointegration is I(1)
 def integration_p_values(symbol_prices : pd.Series) -> tuple[float, float]:
     clean_prices = symbol_prices.dropna()
     prices_stationarity = adfuller(clean_prices, regression='c', autolag='AIC')
