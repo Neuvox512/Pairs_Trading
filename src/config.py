@@ -1,0 +1,2 @@
+BROKER_TIMEZONE = "Europe/Bucharest"
+STOCK_MARKET_CALENDAR = "NYSE"
