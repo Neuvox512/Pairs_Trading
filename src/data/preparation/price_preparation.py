@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-def prepare_prices(close_prices: pd.DataFrame) -> pd.DataFrame:
-    clean_prices = close_prices.ffill().dropna()
+def fill_gaps(close_prices: pd.DataFrame) -> pd.DataFrame:
+    filled_prices = close_prices.ffill()
 
-    return clean_prices
+    return filled_prices
