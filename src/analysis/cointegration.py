@@ -27,8 +27,8 @@ def calculate_pair_p_values(close_prices : pd.DataFrame, symbols : list[str]) ->
     return pd.DataFrame(result)
 
 #Condition for cointegration is I(1)
-def integration_p_values(symbol_prices : pd.Series) -> tuple[float, float]:
-    clean_prices = symbol_prices.dropna()
+def integration_p_values(close_prices : pd.Series) -> tuple[float, float]:
+    clean_prices = close_prices.dropna()
     prices_stationarity = adfuller(clean_prices, regression='c', autolag='AIC')
     prices_stationarity_p_value = prices_stationarity[1]
 
