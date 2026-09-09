@@ -1,5 +1,30 @@
 import pandas as pd
 from statsmodels.tsa.stattools import coint, adfuller
+from statsmodels.stats.multitest import fdrcorrection
+from itertools import combinations
+
+
+def bh_correction(pair_p_values : pd.DataFrame) -> pd.DataFrame:
+    bh_corr = fdrcorrection(pair_p_values['coint_p_value'], alpha=0.05)
+    pair_p_values['adjusted_p_value'] = bh_corr[1]
+    pair_p_values['reject_no_coint'] = bh_corr[0]
+
+    return pair_p_values
+
+
+def calculate_pair_p_values(close_prices : pd.DataFrame, symbols : list[str]) -> pd.DataFrame:
+    result = []
+    for symbol_1, symbol_2 in combinations(symbols, 2):
+        coint_p_value = cointegration_p_value(close_prices[symbol_1], close_prices[symbol_2])
+        result.append(
+            {
+                "first_symbol": symbol_1,
+                "second_symbol": symbol_2,
+                "coint_p_value": coint_p_value,
+            }
+        )
+
+    return pd.DataFrame(result)
 
 #Condition for cointegration is I(1)
 def integration_p_values(symbol_prices : pd.Series) -> tuple[float, float]:
@@ -33,4 +58,5 @@ def cointegration_p_value(first_symbol_close : pd.Series, second_symbol_close : 
                                                      trend='c', autolag='AIC', return_results=False)
 
     return p_value
+
 
