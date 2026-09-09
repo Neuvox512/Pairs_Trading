@@ -1,4 +1,4 @@
-from src.analysis.pair_screening import screen_pairs
+from src.analysis.pairs_screening import screen_pairs
 
 def test_screen_cointegrated_pairs(sim_close_prices) -> None:
     close_prices = sim_close_prices[

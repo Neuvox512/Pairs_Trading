@@ -4,7 +4,6 @@ from src.analysis.cointegration import (integration_p_values,
                                         select_i1_symbols,
                                         calculate_pair_p_values,
                                         bh_correction)
-from tests.analysis.conftest import sim_close_prices
 
 
 def test_integration_p_values(sim_close_prices) -> None:
