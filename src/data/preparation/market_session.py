@@ -2,7 +2,7 @@ from datetime import date
 import pandas as pd
 import pandas_market_calendars as mcal
 from src.data.timeframes import TIME_FREQUENCIES
-from src.config import BROKER_TIMEZONE, STOCK_MARKET_CALENDAR
+from src.config import STOCK_MARKET_CALENDAR
 
 MARKET_CALENDAR = mcal.get_calendar(STOCK_MARKET_CALENDAR)
 
@@ -20,7 +20,7 @@ def get_trading_dates(start_date : date, end_date : date) -> list[date]:
 def get_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.Timestamp, pd.Timestamp] | None:
     #Roboforex broker used here as example and therefore timezone is set to 'Europe/Bucharest'
     #Change 'tz' parameter according to your broker timezone
-    schedule = MARKET_CALENDAR.schedule(start_date=session_date, end_date=session_date, tz=BROKER_TIMEZONE)
+    schedule = MARKET_CALENDAR.schedule(start_date=session_date, end_date=session_date, tz='UTC')
 
     if schedule.empty:
         return None

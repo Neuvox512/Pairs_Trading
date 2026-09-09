@@ -28,6 +28,6 @@ def test_get_session_bar_range () -> None:
     session_date = date(2026, 8, 3)
     session_bar_range = get_session_bar_range(session_date, 'M1')
 
-    assert session_bar_range[0] == pd.Timestamp("2026-08-03 16:30:00", tz="Europe/Bucharest")
-    assert session_bar_range[1] == pd.Timestamp("2026-08-03 22:59:00", tz="Europe/Bucharest")
+    assert session_bar_range[0] == pd.Timestamp("2026-08-03 13:30:00", tz="UTC")
+    assert session_bar_range[1] == pd.Timestamp("2026-08-03 19:59:00", tz="UTC")
 

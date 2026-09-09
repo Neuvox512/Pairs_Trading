@@ -27,8 +27,8 @@ class MT5Terminal:
                    start_time: datetime,
                    end_time: datetime) -> pd.DataFrame:
 
-        mt5_start_time = utc_to_mt5_server_time(start_time)
-        mt5_end_time = utc_to_mt5_server_time(end_time)
+        mt5_start_time = self.utc_to_mt5_server_time(start_time)
+        mt5_end_time = self.utc_to_mt5_server_time(end_time)
 
         rates = mt5.copy_rates_range(symbol, MT5_TIMEFRAMES[timeframe], mt5_start_time, mt5_end_time)
 
