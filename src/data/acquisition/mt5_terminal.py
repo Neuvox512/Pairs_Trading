@@ -2,6 +2,7 @@ from datetime import datetime
 import pandas as pd
 import MetaTrader5 as mt5
 from src.data.timeframes import MT5_TIMEFRAMES
+from src.config import BROKER_TIMEZONE
 
 
 class MT5Terminal:
@@ -24,7 +25,9 @@ class MT5Terminal:
             raise RuntimeError(f'Could not fetch rates for {symbol}: {mt5.last_error()}')
 
         bars = pd.DataFrame(rates)
-        bars['time'] = pd.to_datetime(bars['time'], unit='s', utc=True)
+
+        #Despite documentation mt5 return server time, so for convenient work 'time' was standardized to 'UTC'
+        bars['time'] = pd.to_datetime(bars['time'], unit='s').dt.tz_localize(BROKER_TIMEZONE).dt.tz_convert('UTC')
         bars = bars.rename(columns={'time': 'time_utc'})
 
         return bars
@@ -49,6 +52,7 @@ class MT5Terminal:
         if len(rates) == 0:
             return None
 
-        return pd.to_datetime(rates[0]['time'], unit='s', utc=True)
+        # Despite documentation mt5 return server time, so for convenient work 'time' was standardized to 'UTC'
+        return pd.to_datetime(rates[0]['time'], unit='s').dt.tz_localize(BROKER_TIMEZONE).dt.tz_convert('UTC')
 
 
