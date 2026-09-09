@@ -1,4 +1,3 @@
-import pandas as pd
 from src.analysis.cointegration import *
 
 def screen_pairs(close_prices : pd.DataFrame) -> pd.DataFrame:
