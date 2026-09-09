@@ -7,12 +7,12 @@ from src.config import BROKER_TIMEZONE, STOCK_MARKET_CALENDAR
 MARKET_CALENDAR = mcal.get_calendar(STOCK_MARKET_CALENDAR)
 
 
-def get_trading_dates(start_date : date, end_date : date) -> list[str]:
+def get_trading_dates(start_date : date, end_date : date) -> list[date]:
     schedule = MARKET_CALENDAR.schedule(start_date=start_date, end_date=end_date)
 
     trading_dates = []
-    for date in schedule.index:
-        trading_dates.append(date.date())
+    for session_date in schedule.index:
+        trading_dates.append(session_date.date())
 
     return trading_dates
 
