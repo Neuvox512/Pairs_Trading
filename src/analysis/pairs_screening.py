@@ -1,9 +1,4 @@
-from datetime import datetime
-
-import pandas as pd
-
 from src.analysis.cointegration import *
-from src.data.sqlite_db import SQLiteDB
 from src.data.market_session import *
 
 
@@ -20,8 +15,9 @@ def screen_pairs(close_prices : pd.DataFrame) -> pd.DataFrame:
 def screen_historical_sessions(
         db : SQLiteDB,
         symbols : list[str],
-        timeframe, start_date : datetime,
-        end_date : datetime) -> pd.DataFrame:
+        timeframe : str,
+        start_date : date,
+        end_date : date) -> pd.DataFrame:
     trading_dates = get_trading_dates(start_date, end_date)
     historical_data = []
 

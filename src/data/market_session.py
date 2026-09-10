@@ -8,6 +8,18 @@ from src.data.sqlite_db import  SQLiteDB
 MARKET_CALENDAR = mcal.get_calendar(STOCK_MARKET_CALENDAR)
 
 
+def get_session_prices(db : SQLiteDB, symbols : list[str], timeframe : str,session_date : date):
+    session_range = get_session_bar_range(session_date, timeframe)
+
+    if session_range is None:
+        return pd.DataFrame()
+
+    close_prices = db.load_close_prices(symbols, timeframe, session_range[0], session_range[1])
+    close_prices = close_prices.ffill()
+
+    return close_prices
+
+
 def get_trading_dates(start_date : date, end_date : date) -> list[date]:
     schedule = MARKET_CALENDAR.schedule(start_date=start_date, end_date=end_date)
 
@@ -33,14 +45,3 @@ def get_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.Timest
 
     return market_open, last_bar_time
 
-
-def get_session_prices(db : SQLiteDB, symbols : list[str], timeframe : str,session_date : date):
-    session_range = get_session_bar_range(session_date, timeframe)
-
-    if session_range is None:
-        return pd.DataFrame()
-
-    close_prices = db.load_close_prices(symbols, timeframe, session_range[0], session_range[1])
-    close_prices = close_prices.ffill()
-
-    return close_prices
