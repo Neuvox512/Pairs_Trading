@@ -1,6 +1,6 @@
 from datetime import date
 import pandas as pd
-from src.data.preparation.market_session import get_trading_dates, get_session_bar_range
+from src.data.market_session import get_trading_dates, get_session_bar_range
 
 
 def test_get_trading_dates() -> None:

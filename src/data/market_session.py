@@ -3,6 +3,7 @@ import pandas as pd
 import pandas_market_calendars as mcal
 from src.data.timeframes import TIME_FREQUENCIES
 from src.config import STOCK_MARKET_CALENDAR
+from src.data.sqlite_db import  SQLiteDB
 
 MARKET_CALENDAR = mcal.get_calendar(STOCK_MARKET_CALENDAR)
 
@@ -18,8 +19,6 @@ def get_trading_dates(start_date : date, end_date : date) -> list[date]:
 
 
 def get_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.Timestamp, pd.Timestamp] | None:
-    #Roboforex broker used here as example and therefore timezone is set to 'Europe/Bucharest'
-    #Change 'tz' parameter according to your broker timezone
     schedule = MARKET_CALENDAR.schedule(start_date=session_date, end_date=session_date, tz='UTC')
 
     if schedule.empty:
@@ -35,4 +34,13 @@ def get_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.Timest
     return market_open, last_bar_time
 
 
+def get_session_prices(db : SQLiteDB, symbols : list[str], timeframe : str,session_date : date):
+    session_range = get_session_bar_range(session_date, timeframe)
 
+    if session_range is None:
+        return pd.DataFrame()
+
+    close_prices = db.load_close_prices(symbols, timeframe, session_range[0], session_range[1])
+    close_prices = close_prices.ffill()
+
+    return close_prices

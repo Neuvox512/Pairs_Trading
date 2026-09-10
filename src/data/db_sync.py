@@ -1,6 +1,6 @@
 from pathlib import Path
-from src.data.acquisition.data_updater import update_all_symbols
-from src.data.acquisition.mt5_terminal import MT5Terminal
+from src.data.data_updater import update_all_symbols
+from src.data.mt5_terminal import MT5Terminal
 from src.data.sqlite_db import SQLiteDB
 
 def main() -> None:
