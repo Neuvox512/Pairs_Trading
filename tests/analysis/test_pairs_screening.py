@@ -25,6 +25,6 @@ def test_screen_historical_sessions(sim_db : SQLiteDB) -> None:
         symbols,
         'M1',
         date(2026, 8, 3),
-        date(2026, 8, 3))
+        date(2026, 8, 4))
 
-    assert historical_sessions['reject_no_coint'] == True
+    assert historical_sessions["reject_no_coint"].tolist() == [True, True]

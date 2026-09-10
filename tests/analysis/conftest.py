@@ -11,39 +11,42 @@ def sim_db(tmp_path) -> SQLiteDB:
     db = SQLiteDB(tmp_path/'test_db.db')
     db.create_table()
 
-    random_gen = np.random.RandomState(0)
+    session_dates = ["2026-08-03 13:30:00", "2026-08-04 13:30:00"]
 
-    time_index = pd.date_range(start="2026-08-03 13:30:00", periods=390, freq="1min", tz="UTC")
+    for session_date in session_dates:
+        random_gen = np.random.RandomState(0)
 
-    first_i1 = pd.Series(100 + random_gen.normal(size=390).cumsum(), index=time_index)
+        time_index = pd.date_range(start=session_date, periods=390, freq="1min", tz="UTC")
 
-    second_i1 = pd.Series(50 + 2 * first_i1 + random_gen.normal(size=390, scale=0.5), index=time_index)
+        first_i1 = pd.Series(100 + random_gen.normal(size=390).cumsum(), index=time_index)
 
-    independent_i1 = pd.Series(200 + random_gen.normal(size=390).cumsum(), index=time_index)
+        second_i1 = pd.Series(50 + 2 * first_i1 + random_gen.normal(size=390, scale=0.5), index=time_index)
 
-    stationary = pd.Series(100 + random_gen.normal(size=390), index=time_index)
+        independent_i1 = pd.Series(200 + random_gen.normal(size=390).cumsum(), index=time_index)
 
-    for sim_symbol, sim_close_prices in {
-            "first_i1": first_i1,
-            "second_i1": second_i1,
-            "indep_i1": independent_i1,
-            "stationary": stationary,
-        }.items():
+        stationary = pd.Series(100 + random_gen.normal(size=390), index=time_index)
 
-        sim_bars = pd.DataFrame(
-            {
-                "time_utc": time_index,
-                "open": sim_close_prices,
-                "high": sim_close_prices,
-                "low": sim_close_prices,
-                "close": sim_close_prices,
-                "tick_volume": np.ones(390, dtype=int),
-                "spread": np.zeros(390, dtype=int),
-                "real_volume": np.zeros(390, dtype=int),
-            }
-        )
+        for sim_symbol, sim_close_prices in {
+                "first_i1": first_i1,
+                "second_i1": second_i1,
+                "indep_i1": independent_i1,
+                "stationary": stationary,
+            }.items():
 
-        db.save_bars(sim_symbol, 'M1', sim_bars)
+            sim_bars = pd.DataFrame(
+                {
+                    "time_utc": time_index,
+                    "open": sim_close_prices,
+                    "high": sim_close_prices,
+                    "low": sim_close_prices,
+                    "close": sim_close_prices,
+                    "tick_volume": np.ones(390, dtype=int),
+                    "spread": np.zeros(390, dtype=int),
+                    "real_volume": np.zeros(390, dtype=int),
+                }
+            )
+
+            db.save_bars(sim_symbol, 'M1', sim_bars)
 
     return db
     
