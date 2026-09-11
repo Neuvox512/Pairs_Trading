@@ -2,13 +2,12 @@ from src.analysis.cointegration import *
 from src.data.market_session import *
 
 def summarize_pairs_results(historical_results : pd.DataFrame) -> pd.DataFrame:
-	pairs_summary = historical_results.groupby(
-        ['first_symbol', 'second_symbol'], as_index = False).agg(
+	pairs_summary = historical_results.groupby(['first_symbol', 'second_symbol'], as_index = False).agg(
         tested_sessions = ('session_date', 'nunique'),
         coint_sessions = ('reject_no_coint', 'sum')
     )
 	pairs_summary['total_sessions'] = historical_results['session_date'].nunique()
-	pairs_summary['persistance'] = (pairs_summary['coint_sessions']/pairs_summary['total_sessions'])
+	pairs_summary['persistence'] = (pairs_summary['coint_sessions']/pairs_summary['total_sessions'])
 
 	return pairs_summary
 

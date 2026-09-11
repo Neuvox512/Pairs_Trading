@@ -1,5 +1,3 @@
-from numpy.ma.core import equal
-
 from src.analysis.pairs_screening import screen_historical_sessions, summarize_pairs_results
 from src.analysis.pairs_screening import screen_pairs
 from src.data.sqlite_db import SQLiteDB
@@ -18,8 +16,8 @@ def test_summarize_pairs_results(sim_db : SQLiteDB) -> None:
 
     summary = summarize_pairs_results(historical_sessions)
 
-    assert summary['persistance'] == 1.0
-    assert summary['total_sessions'] == 2
+    assert summary['persistence'].iloc[0] == 1.0
+    assert summary['total_sessions'].iloc[0] == 2
 
 def test_screen_cointegrated_pairs(sim_close_prices) -> None:
     close_prices = sim_close_prices[
