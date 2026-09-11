@@ -1,5 +1,20 @@
+import pandas as pd
+
 from src.analysis.cointegration import *
 from src.data.market_session import *
+
+
+def select_stable_pairs(
+        pairs_summary : pd.DataFrame,
+        min_test_sessions : int,
+        min_persistence) -> pd.DataFrame:
+
+    selected_pairs = pairs_summary[
+        pairs_summary['persistence'] < min_persistence
+        and pairs_summary['tested_sessions'] >= min_test_sessions
+    ]
+
+    return selected_pairs
 
 def summarize_pairs_results(historical_results : pd.DataFrame) -> pd.DataFrame:
 	pairs_summary = historical_results.groupby(['first_symbol', 'second_symbol'], as_index = False).agg(
@@ -28,6 +43,7 @@ def screen_historical_sessions(
         timeframe : str,
         start_date : date,
         end_date : date) -> pd.DataFrame:
+
     trading_dates = get_trading_dates(start_date, end_date)
     historical_data = []
 
