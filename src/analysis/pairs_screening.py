@@ -10,8 +10,8 @@ def select_stable_pairs(
         min_persistence) -> pd.DataFrame:
 
     selected_pairs = pairs_summary[
-        pairs_summary['persistence'] < min_persistence
-        and pairs_summary['tested_sessions'] >= min_test_sessions
+        (pairs_summary['persistence'] >= min_persistence)
+        & (pairs_summary['tested_sessions'] >= min_test_sessions)
     ]
 
     return selected_pairs
