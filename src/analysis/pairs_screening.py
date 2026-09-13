@@ -14,18 +14,8 @@ def select_stable_pairs(
 
     return selected_pairs
 
-def summarize_pairs_results(historical_results : pd.DataFrame) -> pd.DataFrame:
-	pairs_summary = historical_results.groupby(['first_symbol', 'second_symbol'], as_index = False).agg(
-        tested_sessions = ('session_date', 'nunique'),
-        coint_sessions = ('reject_no_coint', 'sum')
-    )
-	pairs_summary['total_sessions'] = historical_results['session_date'].nunique()
-	pairs_summary['persistence'] = (pairs_summary['coint_sessions']/pairs_summary['total_sessions'])
 
-	return pairs_summary
-
-
-def screen_historical_sessions(
+def historical_screening(
         db : SQLiteDB,
         symbols : list[str],
         timeframe : str,
@@ -41,4 +31,13 @@ def screen_historical_sessions(
         coint_results.insert(0, 'session_date', session_date)
         historical_data.append(coint_results)
 
-    return pd.concat(historical_data, ignore_index=True)
+    historical_screening_results = pd.concat(historical_data, ignore_index=True)
+
+    pairs_summary = historical_screening_results.groupby(['first_symbol', 'second_symbol'], as_index=False).agg(
+        tested_sessions=('session_date', 'nunique'),
+        coint_sessions=('reject_no_coint', 'sum')
+    )
+    pairs_summary['total_sessions'] = historical_screening_results['session_date'].nunique()
+    pairs_summary['persistence'] = (pairs_summary['coint_sessions'] / pairs_summary['total_sessions'])
+
+    return pairs_summary
