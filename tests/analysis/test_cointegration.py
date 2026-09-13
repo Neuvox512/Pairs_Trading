@@ -1,20 +1,8 @@
 from src.data.market_session import *
 from src.analysis.cointegration import (
-    integration_p_values,
     select_i1_symbols,
-    calculate_pair_p_values,
+    cointegration,
     bh_correction)
-
-
-def test_integration_p_values(sim_close_prices) -> None:
-    first_symbol_p_values = integration_p_values(sim_close_prices['first_i1'])
-
-    second_symbol_p_values = integration_p_values(sim_close_prices['second_i1'])
-
-    assert first_symbol_p_values[0] > 0.05
-    assert first_symbol_p_values[1] < 0.05
-    assert second_symbol_p_values[0] > 0.05
-    assert second_symbol_p_values[1] < 0.05
 
 
 def test_select_i1_symbols(sim_close_prices) -> None:
@@ -31,16 +19,8 @@ def test_select_i1_symbols(sim_close_prices) -> None:
     assert set(selected_symbols) == {"first_symbol", "second_symbol"}
 
 
-def test_calculate_pair_p_values(sim_close_prices) -> None:
-    pair_results = calculate_pair_p_values(close_prices=sim_close_prices, symbols=["first_i1", "second_i1", "indep_i1"])
-
-    actual_pairs = list(pair_results[["first_symbol", "second_symbol"]].itertuples(index=False, name=None))
-
-    assert actual_pairs == [
-        ("first_i1", "second_i1"),
-        ("first_i1", "indep_i1"),
-        ("second_i1", "indep_i1"),
-    ]
+def test_cointegration(sim_close_prices) -> None:
+    pair_results = cointegration(sim_close_prices, ["first_i1", "second_i1", "indep_i1"])
 
     assert pair_results["coint_p_value"].between(0, 1).all()
 
