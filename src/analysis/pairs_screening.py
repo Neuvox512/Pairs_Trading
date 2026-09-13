@@ -31,13 +31,15 @@ def historical_screening(
         coint_results.insert(0, 'session_date', session_date)
         historical_data.append(coint_results)
 
-    historical_screening_results = pd.concat(historical_data, ignore_index=True)
+    return pd.concat(historical_data, ignore_index=True)
 
-    pairs_summary = historical_screening_results.groupby(['first_symbol', 'second_symbol'], as_index=False).agg(
+
+def historical_screening_summary(historical_screening : pd.DataFrame) -> pd.DataFrame:
+    pairs_summary = historical_screening.groupby(['first_symbol', 'second_symbol'], as_index=False).agg(
         tested_sessions=('session_date', 'nunique'),
         coint_sessions=('reject_no_coint', 'sum')
     )
-    pairs_summary['total_sessions'] = historical_screening_results['session_date'].nunique()
+    pairs_summary['total_sessions'] = historical_screening['session_date'].nunique()
     pairs_summary['persistence'] = (pairs_summary['coint_sessions'] / pairs_summary['total_sessions'])
 
     return pairs_summary

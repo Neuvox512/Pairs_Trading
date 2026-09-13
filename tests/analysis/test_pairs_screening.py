@@ -24,6 +24,13 @@ def test_select_stable_pairs(sim_db : SQLiteDB) -> None:
 def test_historical_screening(sim_db : SQLiteDB) -> None:
     symbols = ["first_i1", "second_i1"]
 
-    historical_sessions = historical_screening(sim_db, symbols, 'M1', date(2026, 8, 3), date(2026, 8, 4))
+    historical_sessions = historical_screening(
+        sim_db,
+        symbols,
+        'M1',
+        date(2026, 8, 3),
+        date(2026, 8, 4)
+    )
 
-    assert historical_sessions["reject_no_coint"].tolist() == [True, True]
+    assert len(historical_sessions) == 2
+    assert historical_sessions['reject_no_coint'].to_list() == [True, True]
