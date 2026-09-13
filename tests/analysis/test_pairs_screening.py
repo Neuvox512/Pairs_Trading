@@ -1,4 +1,4 @@
-from src.analysis.pairs_screening import historical_screening, select_stable_pairs, historical_screening_summary
+from src.analysis.pairs_selection import historical_screening, select_stable_pairs, historical_screening_summary
 from src.data.sqlite_db import SQLiteDB
 from datetime import date
 

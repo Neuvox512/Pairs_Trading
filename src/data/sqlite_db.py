@@ -8,10 +8,8 @@ class SQLiteDB:
     def __init__(self, db_path : Path) -> None:
         self.db_path = Path(db_path)
 
-
     def connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self.db_path)
-
 
     def create_table(self) -> None:
         query = """
@@ -33,7 +31,6 @@ class SQLiteDB:
 
         with self.connect() as conn:
             conn.execute(query)
-
 
     def save_bars(self, symbol : str, timeframe : str, bars : pd.DataFrame) -> int:
         bars_to_save = bars.copy()
@@ -88,7 +85,6 @@ class SQLiteDB:
 
         return len(bars_to_save)
 
-
     def load_bars(self, symbol: str, timeframe: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
         start_timestamp = int(start_time.timestamp())
         end_timestamp = int(end_time.timestamp())
@@ -118,7 +114,6 @@ class SQLiteDB:
         bars['time_utc'] = pd.to_datetime(bars['time_utc'], unit = 's', utc = True)
 
         return bars
-        
 
     def get_latest_bar_time(self, symbol : str, timeframe : str) -> datetime | None:
         query = """SELECT MAX(time_utc) FROM bars WHERE symbol = ? AND timeframe = ?"""
@@ -130,7 +125,6 @@ class SQLiteDB:
             return None
 
         return pd.to_datetime(latest_bar, unit = 's', utc = True)
-
 
     def load_close_prices(self, symbols : list[str],
                           timeframe : str,

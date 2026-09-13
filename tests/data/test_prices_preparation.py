@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.data.preparation.prices_preparation import get_session_prices
+from src.data.market_session import get_session_prices
 from src.data.sqlite_db import SQLiteDB
 from pathlib import Path
 from datetime import datetime, date

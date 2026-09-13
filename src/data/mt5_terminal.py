@@ -2,12 +2,12 @@ from datetime import datetime
 import pandas as pd
 import MetaTrader5 as mt5
 from src.data.timeframes import MT5_TIMEFRAMES
-from src.config import BROKER_TIMEZONE
+from src.config import ROBOFOREX_TIMEZONE, MT5_TERMINAL_PATH, PEPPERSTONE_REFERENCE_TIMEZONE, PEPPERSTONE_SERVER_SHIFT_HOURS
 
 
 class MT5Terminal:
     def connect(self) -> None:
-        if not mt5.initialize():
+        if not mt5.initialize(path=MT5_TERMINAL_PATH):
             raise RuntimeError(f'Could not connect to MT5 {mt5.last_error()}')
 
     def close(self) -> None:
@@ -16,7 +16,11 @@ class MT5Terminal:
     #Every query will always be in 'UTC'
     #Therefore our query time will be converted to server time act like 'UTC' to avoid further convertation
     def utc_to_mt5_server_time(self, time_utc: datetime) -> datetime:
-        server_time = (pd.Timestamp(time_utc).tz_convert(BROKER_TIMEZONE).tz_localize(None).tz_localize("UTC"))
+        server_time = (
+            pd.Timestamp(time_utc).tz_convert(
+                PEPPERSTONE_REFERENCE_TIMEZONE).tz_localize(None) + pd.Timedelta(
+                hours=PEPPERSTONE_SERVER_SHIFT_HOURS).tz_localize("UTC")
+        )
 
         return server_time.to_pydatetime()
 
@@ -38,7 +42,11 @@ class MT5Terminal:
         bars = pd.DataFrame(rates)
 
         #Despite documentation mt5 return server time, so for convenient work 'time' was standardized to 'UTC'
-        bars['time'] = pd.to_datetime(bars['time'], unit='s').dt.tz_localize(BROKER_TIMEZONE).dt.tz_convert('UTC')
+        bars['time'] = (
+            (pd.to_datetime(bars['time'], unit='s') - pd.Timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS))
+            .dt.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE)
+            .dt.tz_convert('UTC')
+        )
         bars = bars.rename(columns={'time': 'time_utc'})
 
         return bars
@@ -63,6 +71,8 @@ class MT5Terminal:
         if len(rates) == 0:
             return None
 
-        return pd.to_datetime(rates[0]['time'], unit='s').tz_localize(BROKER_TIMEZONE).tz_convert('UTC')
+        return pd.to_datetime(rates[0]['time'], unit='s')- pd.Timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
+            .dt.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE)
+            .dt.tz_convert('UTC')
 
 

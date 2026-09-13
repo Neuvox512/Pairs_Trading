@@ -6,7 +6,7 @@ from src.data.sqlite_db import SQLiteDB
 def main() -> None:
     terminal = MT5Terminal()
     terminal.connect()
-    db = SQLiteDB(Path("market_data_(utc).db"))
+    db = SQLiteDB(Path("RoboForex_market_data_(utc).db"))
     db.create_table()
 
     all_symbols = terminal.get_all_symbols()

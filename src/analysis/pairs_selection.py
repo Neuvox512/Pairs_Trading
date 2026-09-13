@@ -1,5 +1,6 @@
 from src.analysis.cointegration import *
 from src.data.market_session import *
+from tqdm import tqdm
 
 
 def select_stable_pairs(
@@ -24,7 +25,7 @@ def historical_screening(
     trading_dates = get_trading_dates(start_date, end_date)
     historical_data = []
 
-    for session_date in trading_dates:
+    for session_date in tqdm(trading_dates):
         close_prices = get_session_prices(db, symbols, timeframe, session_date)
         coint_results = screen_pairs(close_prices)
         coint_results.insert(0, 'session_date', session_date)
