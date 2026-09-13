@@ -18,7 +18,7 @@ def test_select_stable_pairs(sim_db : SQLiteDB) -> None:
 
     summary = summarize_pairs_results(historical_sessions)
 
-    stable_pairs = select_stable_pairs(summary, 1, 1)
+    stable_pairs = select_stable_pairs(summary, 2, 1)
 
     assert len(stable_pairs) == 1
     assert stable_pairs.iloc[0]["first_symbol"] == "first_i1"

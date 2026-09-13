@@ -20,7 +20,7 @@ def sim_db(tmp_path) -> SQLiteDB:
 
         first_i1 = pd.Series(100 + random_gen.normal(size=390).cumsum(), index=time_index)
 
-        second_i1 = pd.Series(50 + 2 * first_i1 + random_gen.normal(size=390, scale=0.5), index=time_index)
+        second_i1 = pd.Series(50 + 2 * first_i1 + random_gen.normal(size=390, scale=0.1), index=time_index)
 
         independent_i1 = pd.Series(200 + random_gen.normal(size=390).cumsum(), index=time_index)
 

@@ -1,5 +1,3 @@
-import pandas as pd
-
 from src.analysis.cointegration import *
 from src.data.market_session import *
 
@@ -7,7 +5,7 @@ from src.data.market_session import *
 def select_stable_pairs(
         pairs_summary : pd.DataFrame,
         min_test_sessions : int,
-        min_persistence) -> pd.DataFrame:
+        min_persistence : float) -> pd.DataFrame:
 
     selected_pairs = pairs_summary[
         (pairs_summary['persistence'] >= min_persistence)
@@ -25,16 +23,6 @@ def summarize_pairs_results(historical_results : pd.DataFrame) -> pd.DataFrame:
 	pairs_summary['persistence'] = (pairs_summary['coint_sessions']/pairs_summary['total_sessions'])
 
 	return pairs_summary
-
-
-def screen_pairs(close_prices : pd.DataFrame) -> pd.DataFrame:
-    i1_symbols = select_i1_symbols(close_prices)
-
-    coint_pairs = calculate_pair_p_values(close_prices, i1_symbols)
-
-    corrected_coint_pairs = bh_correction(coint_pairs)
-
-    return corrected_coint_pairs
 
 
 def screen_historical_sessions(

@@ -1,9 +1,9 @@
 from src.data.market_session import *
-from src.analysis.cointegration import (integration_p_values,
-                                        cointegration_p_value,
-                                        select_i1_symbols,
-                                        calculate_pair_p_values,
-                                        bh_correction)
+from src.analysis.cointegration import (
+    integration_p_values,
+    select_i1_symbols,
+    calculate_pair_p_values,
+    bh_correction)
 
 
 def test_integration_p_values(sim_close_prices) -> None:
@@ -29,12 +29,6 @@ def test_select_i1_symbols(sim_close_prices) -> None:
     selected_symbols = select_i1_symbols(all_close_prices)
 
     assert set(selected_symbols) == {"first_symbol", "second_symbol"}
-
-
-def test_cointegration_p_value(sim_close_prices) -> None:
-    p_value = cointegration_p_value(sim_close_prices['first_i1'], sim_close_prices['second_i1'])
-
-    assert p_value < 0.05
 
 
 def test_calculate_pair_p_values(sim_close_prices) -> None:

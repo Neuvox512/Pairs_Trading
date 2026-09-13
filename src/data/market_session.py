@@ -16,6 +16,7 @@ def get_session_prices(db : SQLiteDB, symbols : list[str], timeframe : str,sessi
 
     close_prices = db.load_close_prices(symbols, timeframe, session_range[0], session_range[1])
     close_prices = close_prices.ffill()
+    close_prices = close_prices.dropna()
 
     return close_prices
 
