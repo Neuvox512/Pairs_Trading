@@ -80,6 +80,6 @@ class MT5Terminal:
         server_time = pd.Series([rates[0][0]])
         latest_bar_time = self.mt5_timestamps_to_utc(server_time)
 
-        return latest_bar_time
+        return latest_bar_time.iloc[0]
 
 
