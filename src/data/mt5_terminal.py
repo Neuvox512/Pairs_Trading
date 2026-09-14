@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 import pandas as pd
 import MetaTrader5 as mt5
+from pandas import DatetimeIndex
+
 from src.data.timeframes import MT5_TIMEFRAMES
 from src.config import MT5_TERMINAL_PATH, PEPPERSTONE_REFERENCE_TIMEZONE, PEPPERSTONE_SERVER_SHIFT_HOURS
 
@@ -19,15 +21,15 @@ class MT5Terminal:
         new_york_time = pd.Timestamp(time_utc).tz_localize('utc').tz_convert(PEPPERSTONE_REFERENCE_TIMEZONE)
         server_time = new_york_time.tz_localize(None) + timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
         #fake localization (if not localized, then time will be shifted in winter time shift)
-        server_time = server_time
+        server_time = server_time.tz_localize('utc')
 
         return server_time.to_pydatetime()
 
-    def mt5_timestamps_to_utc(self, timestamps : pd.Series | list[int]) -> pd.DatetimeIndex:
+    def mt5_timestamps_to_utc(self, timestamps : pd.Series) -> pd.Series:
         server_time = pd.to_datetime(timestamps, unit='s')
         new_york_time = server_time - timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
 
-        return new_york_time.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE).tz_convert('utc')
+        return new_york_time.dt.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE).dt.tz_convert('utc')
 
     def fetch_bars(self,
                    symbol: str,
@@ -75,8 +77,9 @@ class MT5Terminal:
         if len(rates) == 0:
             return None
 
-        latest_bars = self.mt5_timestamps_to_utc(rates[0][0])
+        server_time = pd.Series([rates[0][0]])
+        latest_bar_time = self.mt5_timestamps_to_utc(server_time)
 
-        return latest_bars
+        return latest_bar_time
 
 
