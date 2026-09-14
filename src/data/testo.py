@@ -24,16 +24,16 @@ historical_results = historical_screening(
     db=db,
     symbols=symbols,
     timeframe="M1",
-    start_date=date(2026, 8, 24),
-    end_date=date(2026, 8, 28),
+    start_date=date(2026, 9, 2),
+    end_date=date(2026, 9, 4)
 )
 
 pairs_summary = historical_screening_summary(historical_results)
 
 stable_pairs = select_stable_pairs(
     pairs_summary=pairs_summary,
-    min_test_sessions=4,
-    min_persistence=0.6,
+    min_test_sessions=2,
+    min_persistence=0.8,
 )
 
 elapsed_seconds = perf_counter() - start

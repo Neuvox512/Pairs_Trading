@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import MetaTrader5 as mt5
 from src.data.timeframes import MT5_TIMEFRAMES
@@ -16,11 +16,10 @@ class MT5Terminal:
     #Every query will always be in 'UTC'
     #Therefore our query time will be converted to server time act like 'UTC' to avoid further convertation
     def utc_to_mt5_server_time(self, time_utc: datetime) -> datetime:
-        server_time = (
-            pd.Timestamp(time_utc).tz_convert(
-                PEPPERSTONE_REFERENCE_TIMEZONE).tz_localize(None) + pd.Timedelta(
-                hours=PEPPERSTONE_SERVER_SHIFT_HOURS).tz_localize("UTC")
-        )
+        new_york_time = pd.Timestamp(time_utc).tz_localize('utc').tz_convert(PEPPERSTONE_REFERENCE_TIMEZONE)
+        server_time = new_york_time.tz_localize(None) + timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
+        #fake localization
+        server_time = server_time.tz_convert('UTC')
 
         return server_time.to_pydatetime()
 
@@ -71,8 +70,10 @@ class MT5Terminal:
         if len(rates) == 0:
             return None
 
-        return pd.to_datetime(rates[0]['time'], unit='s')- pd.Timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
-            .dt.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE)
-            .dt.tz_convert('UTC')
+        return (
+                pd.to_datetime(rates[0]['time'], unit='s')- pd.Timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
+                .dt.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE).
+                dt.tz_convert('UTC')
+        )
 
 
