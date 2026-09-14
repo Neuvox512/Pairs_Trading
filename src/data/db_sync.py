@@ -4,8 +4,6 @@ from src.data.mt5_terminal import MT5Terminal
 from src.data.sqlite_db import SQLiteDB
 from src.config import SQLITE_DB_PATH
 
-CHUNK_START = 0
-CHUNK_SIZE = 50
 
 def main() -> None:
     terminal = MT5Terminal()
