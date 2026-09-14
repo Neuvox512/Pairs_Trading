@@ -38,7 +38,7 @@ def main(timeframe : str) -> None:
 
         quality = pd.DataFrame(
             {
-            'symbols': actual_bars_count.index,
+            'symbol': actual_bars_count.index,
             'actual_bars_count': actual_bars_count.values,
             }
         )
@@ -46,14 +46,12 @@ def main(timeframe : str) -> None:
         quality["session_date"] = session_date
         quality['expected_bars_count'] = expected_bars_count
         quality['coverage_pct'] = 100 * quality['actual_bars_count'] / quality['expected_bars_count']
-        quality = quality.sort_values(by = 'coverage_pct', ascending = False)
-
         daily_quality_results.append(quality)
 
     daily_quality = pd.concat(daily_quality_results, ignore_index = True)
 
-    print("Trading dates:", len(trading_dates))
-    print("Daily result rows:", len(daily_quality))
+    total_sessions = len(trading_dates)
+    quality_summary = 
 
 if __name__ == '__main__':
     main(timeframe = 'M1')
