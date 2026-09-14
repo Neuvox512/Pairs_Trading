@@ -1,9 +1,9 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, tzinfo
 from src.data.mt5_terminal import MT5Terminal
 from src.data.sqlite_db import SQLiteDB
 from tqdm import tqdm
 
-DEFAULT_HISTORY_START = datetime(year=2025, month=1, day=1)
+DEFAULT_HISTORY_START = datetime(year=2025, month=1, day=1, tzinfo = timezone.utc)
 
 def update_symbol(terminal : MT5Terminal,
                  database : SQLiteDB,

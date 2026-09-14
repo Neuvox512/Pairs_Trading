@@ -18,7 +18,10 @@ class MT5Terminal:
     #Every query will always be in 'UTC'
     #Therefore our query time will be converted to server time act like 'UTC' to avoid further convertation
     def utc_to_mt5_server_time(self, time_utc: datetime) -> datetime:
-        new_york_time = pd.Timestamp(time_utc).tz_localize('utc').tz_convert(PEPPERSTONE_REFERENCE_TIMEZONE)
+        if time_utc.tzinfo is None:
+            raise ValueError("time_utc must be in UTC")
+
+        new_york_time = pd.Timestamp(time_utc).tz_convert(PEPPERSTONE_REFERENCE_TIMEZONE)
         server_time = new_york_time.tz_localize(None) + timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
         #fake localization (if not localized, then time will be shifted in winter time shift)
         server_time = server_time.tz_localize('utc')
