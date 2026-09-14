@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 import pandas as pd
 import MetaTrader5 as mt5
-from pandas import DatetimeIndex
-
 from src.data.timeframes import MT5_TIMEFRAMES
 from src.config import MT5_TERMINAL_PATH, PEPPERSTONE_REFERENCE_TIMEZONE, PEPPERSTONE_SERVER_SHIFT_HOURS
 

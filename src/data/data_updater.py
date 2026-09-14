@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, tzinfo
+from datetime import datetime, timezone
 from src.data.mt5_terminal import MT5Terminal
 from src.data.sqlite_db import SQLiteDB
 from tqdm import tqdm

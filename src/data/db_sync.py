@@ -2,14 +2,15 @@ from pathlib import Path
 from src.data.data_updater import update_all_symbols
 from src.data.mt5_terminal import MT5Terminal
 from src.data.sqlite_db import SQLiteDB
+from src.config import SQLITE_DB_PATH
 
 def main() -> None:
     terminal = MT5Terminal()
     terminal.connect()
-    db = SQLiteDB(Path("RoboForex_market_data_(utc).db"))
+    db = SQLiteDB(Path(SQLITE_DB_PATH))
     db.create_table()
 
-    all_symbols = terminal.get_all_symbols()
+    all_symbols = ["JPM.US"]
 
     try:
         #Add "start_date" if you would like to load more data from the past
