@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import MetaTrader5 as mt5
 from src.data.timeframes import MT5_TIMEFRAMES
-from src.config import ROBOFOREX_TIMEZONE, MT5_TERMINAL_PATH, PEPPERSTONE_REFERENCE_TIMEZONE, PEPPERSTONE_SERVER_SHIFT_HOURS
+from src.config import MT5_TERMINAL_PATH, PEPPERSTONE_REFERENCE_TIMEZONE, PEPPERSTONE_SERVER_SHIFT_HOURS
 
 
 class MT5Terminal:
@@ -18,11 +18,16 @@ class MT5Terminal:
     def utc_to_mt5_server_time(self, time_utc: datetime) -> datetime:
         new_york_time = pd.Timestamp(time_utc).tz_localize('utc').tz_convert(PEPPERSTONE_REFERENCE_TIMEZONE)
         server_time = new_york_time.tz_localize(None) + timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
-        #fake localization
-        server_time = server_time.tz_convert('UTC')
+        #fake localization (if not localized, then time will be shifted in winter time shift)
+        server_time = server_time
 
         return server_time.to_pydatetime()
 
+    def mt5_timestamps_to_utc(self, timestamps : pd.Series | list[int]) -> pd.DatetimeIndex:
+        server_time = pd.to_datetime(timestamps, unit='s')
+        new_york_time = server_time - timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
+
+        return new_york_time.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE).tz_convert('utc')
 
     def fetch_bars(self,
                    symbol: str,
@@ -37,15 +42,13 @@ class MT5Terminal:
 
         if rates is None:
             raise RuntimeError(f'Could not fetch rates for {symbol}: {mt5.last_error()}')
+        if len(rates) == 0:
+            return pd.DataFrame()
 
         bars = pd.DataFrame(rates)
 
         #Despite documentation mt5 return server time, so for convenient work 'time' was standardized to 'UTC'
-        bars['time'] = (
-            (pd.to_datetime(bars['time'], unit='s') - pd.Timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS))
-            .dt.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE)
-            .dt.tz_convert('UTC')
-        )
+        bars['time'] = self.mt5_timestamps_to_utc(bars['time'])
         bars = bars.rename(columns={'time': 'time_utc'})
 
         return bars
@@ -54,10 +57,12 @@ class MT5Terminal:
     def get_all_symbols(self) -> list[str]:
         symbols = mt5.symbols_get()
         all_symbols = []
+
         for symbol in symbols:
             path = symbol.path.lower()
             if 'stock' in path:
                 all_symbols.append(symbol.name)
+
         return all_symbols
 
 
@@ -70,10 +75,8 @@ class MT5Terminal:
         if len(rates) == 0:
             return None
 
-        return (
-                pd.to_datetime(rates[0]['time'], unit='s')- pd.Timedelta(hours=PEPPERSTONE_SERVER_SHIFT_HOURS)
-                .dt.tz_localize(PEPPERSTONE_REFERENCE_TIMEZONE).
-                dt.tz_convert('UTC')
-        )
+        latest_bars = self.mt5_timestamps_to_utc(rates[0][0])
+
+        return latest_bars
 
 
