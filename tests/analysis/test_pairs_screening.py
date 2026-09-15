@@ -20,7 +20,7 @@ def test_select_stable_pairs(sim_db : SQLiteDB) -> None:
     assert stable_pairs.iloc[0]["first_symbol"] == "first_i1"
     assert stable_pairs.iloc[0]["second_symbol"] == "second_i1"
 
-def test_historical_screening_summary(sim_db : SQLiteDB) -> None:
+def test_historical_pairs_screening_summary(sim_db : SQLiteDB) -> None:
     symbols = ["first_i1", "second_i1"]
     historical_results = historical_screening(
         sim_db,
@@ -37,7 +37,7 @@ def test_historical_screening_summary(sim_db : SQLiteDB) -> None:
 
 
 
-def test_historical_screening(sim_db : SQLiteDB) -> None:
+def test_historical_pairs_screening(sim_db : SQLiteDB) -> None:
     symbols = ["first_i1", "second_i1"]
 
     historical_sessions = historical_screening(

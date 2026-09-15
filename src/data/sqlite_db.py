@@ -126,10 +126,26 @@ class SQLiteDB:
 
         return pd.to_datetime(latest_bar, unit = 's', utc = True)
 
-    def load_close_prices(self, symbols : list[str],
-                          timeframe : str,
-                          start_time: datetime,
-                          end_time: datetime) -> pd.DataFrame:
+    def load_quality_data(self, symbols: list[str], timeframe: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
+        start_timestamp = int(start_time.timestamp())
+        end_timestamp = int(end_time.timestamp())
+        placeholders = ', '.join(['?'] * len(symbols))
+
+        query = f"""
+        SELECT symbol, time_utc, close, spread, tick_volume
+        FROM bars
+        WHERE symbol in ({placeholders}) AND timeframe = ? AND time_utc BETWEEN ? AND ?
+        """
+        params = (*symbols, timeframe, start_timestamp, end_timestamp)
+
+        with self.connect() as conn:
+            bars = pd.read_sql_query(query, conn, params = params)
+
+        bars['time_utc'] = pd.to_datetime(bars['time_utc'], unit = 's', utc = True)
+
+        return bars
+
+    def load_close_prices(self, symbols : list[str],timeframe : str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
         start_timestamp = int(start_time.timestamp())
         end_timestamp = int(end_time.timestamp())
         placeholders = ', '.join(['?'] * len(symbols))

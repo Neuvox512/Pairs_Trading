@@ -1,14 +1,11 @@
 from datetime import date
 import pandas as pd
 from src.data.sqlite_db import SQLiteDB
-from src.config import SQLITE_DB_PATH
-from pathlib import Path
 from src.data.market_session import get_session_bar_range, get_trading_dates
+from src.data.timeframes import TIME_FREQUENCIES
 
 
-def main(timeframe : str) -> None:
-    db = SQLiteDB(Path(SQLITE_DB_PATH))
-
+def historical_symbols_sreening(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
     with db.connect() as conn:
         rows = conn.execute("""
         SELECT DISTINCT symbol
@@ -23,7 +20,7 @@ def main(timeframe : str) -> None:
         symbols.append(row[0])
 
     daily_quality_results = []
-    trading_dates = get_trading_dates(date(2026, 8, 1), date(2026, 8, 31))
+    trading_dates = get_trading_dates(start_date, end_date)
 
     for session_date in trading_dates:
         session_bar_range = get_session_bar_range(session_date, timeframe)
@@ -32,15 +29,16 @@ def main(timeframe : str) -> None:
             return None
 
         start_time, end_time = session_bar_range
-        close_prices = db.load_close_prices(symbols, timeframe, start_time, end_time)
-        expected_bars_count = len(close_prices)
-        actual_bars_count = close_prices.notna().sum()
+        bars = db.load_quality_data(symbols, timeframe, start_time, end_time)
+        expected_bars_count = len(pd.date_range(start=start_time, end=end_time, freq=TIME_FREQUENCIES[timeframe]))
 
-        quality = pd.DataFrame(
-            {
-            'symbol': actual_bars_count.index,
-            'actual_bars_count': actual_bars_count.values,
-            }
+        quality = (
+            bars.groupby('symbol')
+            .agg(actual_bars_count = ('time_utc', 'count'),
+                 median_close = ('close', 'median'),
+                 median_spread = ('spread', 'median')
+                 )
+            .reset_index()
         )
 
         quality["session_date"] = session_date
@@ -50,8 +48,4 @@ def main(timeframe : str) -> None:
 
     daily_quality = pd.concat(daily_quality_results, ignore_index = True)
 
-    total_sessions = len(trading_dates)
-    quality_summary = 
-
-if __name__ == '__main__':
-    main(timeframe = 'M1')
+    return daily_quality

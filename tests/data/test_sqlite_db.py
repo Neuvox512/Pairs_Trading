@@ -73,3 +73,21 @@ def test_load_close_prices(tmp_path, sim_bars) -> None:
 
     assert len(close_prices) == 2
     assert list(close_prices.columns) == ["JPM"]
+
+
+def test_load_quality_data(tmp_path, sim_bars) -> None:
+    database = SQLiteDB(tmp_path / "test_db.db")
+    database.create_table()
+    database.save_bars("JPM", "M1", sim_bars)
+
+    start_time = sim_bars["time_utc"].iloc[-2]
+    end_time = sim_bars["time_utc"].iloc[-1]
+
+    quality_data = database.load_quality_data(
+        symbols=["JPM"],
+        timeframe="M1",
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    assert list(quality_data.columns) == ['symbol', 'time_utc', 'close', 'spread', 'tick_volume']
