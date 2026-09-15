@@ -57,7 +57,7 @@ class MT5Terminal:
         return bars
 
 
-    def get_all_us_cfd_symbols(self) -> list[str]:
+    def get_all_us_cfd_symbols(self) -> pd.DataFrame:
         symbols = mt5.symbols_get()
         if symbols is None:
             raise RuntimeError(f'Could not fetch symbols from MT5 {mt5.last_error()}')
@@ -65,9 +65,14 @@ class MT5Terminal:
         us_cfd_symbols = []
         for symbol in symbols:
             if symbol.name.endswith('.US'):
-                us_cfd_symbols.append(symbol.name)
+                us_cfd_symbols.append(
+                    {
+                        'symbol': symbol.name,
+                        'points': symbol.point,
+                    }
+                )
 
-        return sorted(us_cfd_symbols)
+        return pd.DataFrame(us_cfd_symbols, columns=['symbol', 'points'])
 
 
     def get_latest_closed_bar_time(self, symbol: str, timeframe: str,) -> None | pd.Timestamp:

@@ -32,6 +32,16 @@ class SQLiteDB:
         with self.connect() as conn:
             conn.execute(query)
 
+    def create_symbols_table(self) -> None:
+        query = """
+        CREATE TABLE IF NOT EXISTS symbols(
+            symbol TEXT PRIMARY KEY,
+            points REAL NOT NULL
+            )
+        """
+        with self.connect() as conn:
+            conn.execute(query)
+
     def save_bars(self, symbol : str, timeframe : str, bars : pd.DataFrame) -> int:
         bars_to_save = bars.copy()
         bars_to_save['symbol'] = symbol

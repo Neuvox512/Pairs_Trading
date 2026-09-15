@@ -5,7 +5,7 @@ from src.data.market_session import get_session_bar_range, get_trading_dates
 from src.data.timeframes import TIME_FREQUENCIES
 
 
-def historical_symbols_sreening(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
+def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
     with db.connect() as conn:
         rows = conn.execute("""
         SELECT DISTINCT symbol
@@ -30,13 +30,15 @@ def historical_symbols_sreening(db : SQLiteDB, timeframe : str, start_date : dat
 
         start_time, end_time = session_bar_range
         bars = db.load_quality_data(symbols, timeframe, start_time, end_time)
+        bars['spread_pct'] = 100 * bars['spread']/bars['close']
         expected_bars_count = len(pd.date_range(start=start_time, end=end_time, freq=TIME_FREQUENCIES[timeframe]))
+
 
         quality = (
             bars.groupby('symbol')
             .agg(actual_bars_count = ('time_utc', 'count'),
                  median_close = ('close', 'median'),
-                 median_spread = ('spread', 'median')
+                 median_spread_points = ('spread', 'median')
                  )
             .reset_index()
         )

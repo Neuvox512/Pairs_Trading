@@ -10,6 +10,7 @@ def main() -> None:
     terminal.connect()
     db = SQLiteDB(Path(SQLITE_DB_PATH))
     db.create_table()
+    db.create_symbols_table()
 
     all_us_cfd_symbols = terminal.get_all_us_cfd_symbols()
 
