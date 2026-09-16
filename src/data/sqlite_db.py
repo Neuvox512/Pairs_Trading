@@ -36,7 +36,7 @@ class SQLiteDB:
         query = """
         CREATE TABLE IF NOT EXISTS symbols(
             symbol TEXT PRIMARY KEY,
-            points REAL NOT NULL
+            point REAL NOT NULL
             )
         """
         with self.connect() as conn:
@@ -94,6 +94,18 @@ class SQLiteDB:
             conn.executemany(query, rows)
 
         return len(bars_to_save)
+
+    def save_symbols(self, symbols : pd.DataFrame) -> None:
+        query = """
+        INSERT INTO symbols (symbol, points)
+        VALUES (?, ?)
+        ON CONFLICT (symbol)
+        DO UPDATE SET point = excluded.point
+        """
+        params = symbols[['symbol', 'point']].itertuples(index = False, name = None)
+
+        with self.connect() as conn:
+            conn.executemany(query, params)
 
     def load_bars(self, symbol: str, timeframe: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
         start_timestamp = int(start_time.timestamp())
