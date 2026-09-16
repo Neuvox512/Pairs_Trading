@@ -51,7 +51,7 @@ def update_all_symbols(terminal : MT5Terminal,
 
     updated_bars = {}
 
-    for symbol in tqdm(symbols['symbol']):
+    for symbol in tqdm(symbols['symbol'].tolist()):
         try:
             updated_bars[symbol] = update_symbol(terminal, db, symbol, timeframe, start_time)
         except RuntimeError as error:

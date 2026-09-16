@@ -97,7 +97,7 @@ class SQLiteDB:
 
     def save_symbols(self, symbols : pd.DataFrame) -> None:
         query = """
-        INSERT INTO symbols (symbol, points)
+        INSERT INTO symbols (symbol, point)
         VALUES (?, ?)
         ON CONFLICT (symbol)
         DO UPDATE SET point = excluded.point

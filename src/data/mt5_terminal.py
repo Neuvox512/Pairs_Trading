@@ -68,11 +68,11 @@ class MT5Terminal:
                 us_cfd_symbols.append(
                     {
                         'symbol': symbol.name,
-                        'points': symbol.point,
+                        'point': symbol.point,
                     }
                 )
 
-        return pd.DataFrame(us_cfd_symbols, columns=['symbol', 'points'])
+        return pd.DataFrame(us_cfd_symbols, columns=['symbol', 'point'])
 
 
     def get_latest_closed_bar_time(self, symbol: str, timeframe: str,) -> None | pd.Timestamp:

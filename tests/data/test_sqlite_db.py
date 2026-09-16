@@ -1,4 +1,5 @@
 from src.data.sqlite_db import SQLiteDB
+import pandas as pd
 
 def test_sqlite_db(tmp_path) -> None:
     db_path = tmp_path / "test_db.db"
@@ -28,6 +29,23 @@ def test_save_bars(tmp_path, sim_bars) -> None:
 
     assert row_count == 2
 
+def test_save_symbols(tmp_path) -> None:
+    db = SQLiteDB(tmp_path / "test_db.db")
+    db.create_symbols_table()
+
+    instruments = pd.DataFrame(
+        {
+        "symbol": ["AAPL.US", "MSFT.US"],
+        "point": [0.01, 0.01]
+        }
+    )
+
+    db.save_symbols(instruments)
+
+    with db.connect() as conn:
+        rows = conn.execute("SELECT symbol, point FROM symbols ORDER BY symbol").fetchall()
+
+    assert rows == [("AAPL.US", 0.01), ("MSFT.US", 0.01)]
 
 def test_load_bars(tmp_path, sim_bars) -> None:
     db_path = tmp_path / "test_db.db"

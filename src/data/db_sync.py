@@ -13,6 +13,7 @@ def main() -> None:
     db.create_symbols_table()
 
     all_us_cfd_symbols = terminal.get_all_us_cfd_symbols()
+    db.save_symbols(all_us_cfd_symbols)
 
     try:
         #Add "start_date" if you would like to load more data from the past
