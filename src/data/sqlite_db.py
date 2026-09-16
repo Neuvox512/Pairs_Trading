@@ -148,17 +148,17 @@ class SQLiteDB:
 
         return pd.to_datetime(latest_bar, unit = 's', utc = True)
 
-    def load_quality_data(self, symbols: list[str], timeframe: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
+    def load_quality_data(self, timeframe: str, start_time: datetime, end_time: datetime) -> pd.DataFrame:
         start_timestamp = int(start_time.timestamp())
         end_timestamp = int(end_time.timestamp())
-        placeholders = ', '.join(['?'] * len(symbols))
 
-        query = f"""
-        SELECT symbol, time_utc, close, spread, tick_volume
-        FROM bars
-        WHERE symbol in ({placeholders}) AND timeframe = ? AND time_utc BETWEEN ? AND ?
+        query = """
+        SELECT b.symbol, b.time_utc, b.close, b.spread, b.tick_volume, s.point
+        FROM symbols AS s JOIN bars as b 
+        WHERE s.symbol = b.symbol
+        AND b.timeframe = ? AND b.time_utc BETWEEN ? AND ?
         """
-        params = (*symbols, timeframe, start_timestamp, end_timestamp)
+        params = (timeframe, start_timestamp, end_timestamp)
 
         with self.connect() as conn:
             bars = pd.read_sql_query(query, conn, params = params)

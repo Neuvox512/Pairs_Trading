@@ -3,22 +3,10 @@ import pandas as pd
 from src.data.sqlite_db import SQLiteDB
 from src.data.market_session import get_session_bar_range, get_trading_dates
 from src.data.timeframes import TIME_FREQUENCIES
+from pathlib import Path
 
 
 def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
-    with db.connect() as conn:
-        rows = conn.execute("""
-        SELECT DISTINCT symbol
-        FROM bars
-        WHERE timeframe = ?
-        ORDER BY symbol
-        """,
-        (timeframe,),).fetchall()
-
-    symbols = []
-    for row in rows:
-        symbols.append(row[0])
-
     daily_quality_results = []
     trading_dates = get_trading_dates(start_date, end_date)
 
@@ -29,10 +17,9 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
             return None
 
         start_time, end_time = session_bar_range
-        bars = db.load_quality_data(symbols, timeframe, start_time, end_time)
-        bars['spread_pct'] = 100 * bars['spread']/bars['close']
+        bars = db.load_quality_data(timeframe, start_time, end_time)
+        bars['spread_pct'] = 100 * bars['spread'] * bars['point']/bars['close']
         expected_bars_count = len(pd.date_range(start=start_time, end=end_time, freq=TIME_FREQUENCIES[timeframe]))
-
 
         quality = (
             bars.groupby('symbol')
@@ -51,3 +38,8 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
     daily_quality = pd.concat(daily_quality_results, ignore_index = True)
 
     return daily_quality
+
+db = SQLiteDB(Path("Pepperstone_market_data_(utc).db"))
+db.connect()
+daily_q = historical_symbols_quality(db, 'M1', date(2026, 9, 14), date(2026, 9, 15))
+print(daily_q)
