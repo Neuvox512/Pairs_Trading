@@ -6,27 +6,25 @@ from src.data.timeframes import TIME_FREQUENCIES
 from pathlib import Path
 from tqdm import tqdm
 from time import perf_counter
-from matplotlib import pyplot as plt
 
 
-def get_daily_quality_statistics(daily_quality : pd.DataFrame) -> None:
-    fig, axes = plt.subplots(1,3, figsize = (12,7))
-    axes[0].boxplot(daily_quality['coverage_pct'])
-    axes[0].set_title('Data Coverage (%)')
-    coverage_pct_medain = daily_quality['coverage_pct'].median()
-    axes[0].annotate(f'Median:{coverage_pct_medain:.2f}', xy=(1.1, coverage_pct_medain))
 
-    axes[1].boxplot(daily_quality['median_tick_volume'])
-    axes[1].set_title('Median Tick Volume')
-    median_tick_volume_median = daily_quality['median_tick_volume'].median()
-    axes[1].annotate(f'Median:{median_tick_volume_median:.2f}', xy=(1.1, median_tick_volume_median))
+def get_daily_quality_statistics(daily_quality : pd.DataFrame) -> pd.DataFrame:
+    rolling_quality = (
+        daily_quality
+        .sort_values(by=['symbol', 'session_date'])
+        .groupby('symbol')
+        .rolling(window =5)
+        .agg(
+            avg_tick_volume = ('count_tick_volume', 'mean'),
+            coverage_pct = ('coverage_pct', 'median'),
+            avg_spread_pct = ('median_spread_pct', 'mean')
+        ).reset_index()
+    )
+    latest_session_date = rolling_quality['session_date'].max()
+    latest_quality = rolling_quality[rolling_quality['session_date'] == latest_session_date].reset_index()
 
-    axes[2].boxplot(daily_quality['median_spread_pct'])
-    axes[2].set_title('Spread (%)')
-    median_spread_pct_medain = daily_quality['median_spread_pct'].median()
-    axes[2].annotate(f'Median:{median_spread_pct_medain:.2f}', xy=(1.1, median_spread_pct_medain))
-
-    plt.show()
+    return latest_quality
 
 def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
     daily_quality_results = []
@@ -49,7 +47,7 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
             .agg(actual_bars_count = ('time_utc', 'count'),
                  median_close = ('close', 'median'),
                  median_spread_pct = ('spread_pct', 'median'),
-                 median_tick_volume = ('tick_volume', 'median')
+                 count_tick_volume = ('tick_volume', 'count')
                  )
             .reset_index()
         )
@@ -60,6 +58,7 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
         daily_quality_results.append(quality)
 
     daily_quality = pd.concat(daily_quality_results, ignore_index = True)
+    daily_quality = daily_quality.sort_values(['symbol', 'session_date']).set_index(['session_date'])
 
     return daily_quality
 
@@ -67,4 +66,6 @@ db = SQLiteDB(Path("Pepperstone_market_data_(utc).db"))
 db.connect()
 start_time = perf_counter()
 daily_q = historical_symbols_quality(db, 'M1', date(2026, 8, 1), date(2026, 8, 31))
-get_daily_quality_statistics(daily_q)
+qual = get_daily_quality_statistics(daily_q)
+qual.to_excel('daily_quality_statistics.xlsx')
+
