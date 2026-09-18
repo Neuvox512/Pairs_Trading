@@ -60,10 +60,9 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
     daily_quality = pd.concat(daily_quality_results, ignore_index = True)
 
     #Hard filter for fully completed sessions
-    session_counts = daily_quality.groupby('symbol').agg(sessions = ('session_date', 'nunique'))
-    complete_symbols = session_counts[session_counts == len(trading_dates)].reset_index()
-    daily_quality = daily_quality[daily_quality['symbol'].isin(complete_symbols['symbol'])]
-    daily_quality = daily_quality.sort_values(['symbol', 'session_date']).set_index(['session_date'])
+    session_counts = daily_quality.groupby('symbol').agg(session_count=('session_date', 'nunique'))
+    complete_symbols = session_counts[session_counts['session_count'] == len(trading_dates)]
+    daily_quality = daily_quality[daily_quality['symbol'].isin(complete_symbols.index)]
 
     return daily_quality
 
@@ -71,6 +70,7 @@ db = SQLiteDB(Path("Pepperstone_market_data_(utc).db"))
 db.connect()
 start_time = perf_counter()
 daily_q = historical_symbols_quality(db, 'M1', date(2026, 8, 1), date(2026, 8, 31))
-qual = get_daily_quality_statistics(daily_q)
-qual.to_excel('daily_quality_statistics.xlsx')
-daily_q.to_excel('daily_q.xlsx')
+# qual = get_daily_quality_statistics(daily_q)
+# qual.to_excel('daily_quality_statistics.xlsx')
+# daily_q.to_excel('daily_q.xlsx')
+print(daily_q)
