@@ -154,9 +154,11 @@ class SQLiteDB:
 
         query = """
         SELECT b.symbol, b.time_utc, b.close, b.spread, b.tick_volume, s.point
-        FROM symbols AS s JOIN bars as b 
-        WHERE s.symbol = b.symbol
-        AND b.timeframe = ? AND b.time_utc BETWEEN ? AND ?
+        FROM symbols AS s
+        JOIN bars AS b ON b.symbol = s.symbol
+        WHERE b.symbol IN (SELECT symbol FROM symbols)
+        AND b.timeframe = ?
+        AND b.time_utc BETWEEN ? AND ?
         """
         params = (timeframe, start_timestamp, end_timestamp)
 
