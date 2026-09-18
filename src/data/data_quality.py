@@ -22,7 +22,7 @@ def get_daily_quality_statistics(daily_quality : pd.DataFrame) -> pd.DataFrame:
         ).reset_index()
     )
     latest_session_date = rolling_quality['session_date'].max()
-    latest_quality = rolling_quality[rolling_quality['session_date'] == latest_session_date].reset_index()
+    latest_quality = rolling_quality[rolling_quality['session_date'] == latest_session_date].reset_index(drop = True)
 
     return latest_quality
 
@@ -47,7 +47,7 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
             .agg(actual_bars_count = ('time_utc', 'count'),
                  median_close = ('close', 'median'),
                  median_spread_pct = ('spread_pct', 'median'),
-                 count_tick_volume = ('tick_volume', 'count')
+                 count_tick_volume = ('tick_volume', 'sum')
                  )
             .reset_index()
         )
