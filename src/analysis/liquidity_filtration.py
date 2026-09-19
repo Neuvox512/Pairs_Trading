@@ -5,17 +5,33 @@ from src.data.market_session import get_session_bar_range, get_trading_dates
 from src.data.timeframes import TIME_FREQUENCIES
 from pathlib import Path
 from tqdm import tqdm
-from time import perf_counter
+from matplotlib import pyplot as plt
 
 
 
-def get_symbols_liquidity_quality(daily_quality : pd.DataFrame) -> pd.DataFrame:
+
+
+def show_liquidity_params_distribution(symbols_liquidity_quality : pd.DataFrame) -> None:
+    fig, ax = plt.subplots(1,3, figsize = (12,7))
+    ax[0].hist(symbols_liquidity_quality['avg_tick_volume'], bins = 50)
+    ax[0].set_title('Average tick volume')
+
+    ax[1].hist(symbols_liquidity_quality['coverage_pct'], bins = 50)
+    ax[1].set_title('Coverage (%)')\
+
+    ax[2].hist(symbols_liquidity_quality['avg_spread_pct'], bins = 50)
+    ax[2].set_title('Average spread (%)')
+
+    plt.show()
+
+
+def get_symbols_liquidity_quality(daily_quality : pd.DataFrame, window : int = 5) -> pd.DataFrame:
     rolling_quality = (
         daily_quality
         .sort_values(by=['symbol', 'session_date'])
         .set_index('session_date')
         .groupby('symbol')
-        .rolling(window =5)
+        .rolling(window =window)
         .agg(
             avg_tick_volume = ('count_tick_volume', 'mean'),
             coverage_pct = ('coverage_pct', 'median'),
@@ -26,6 +42,7 @@ def get_symbols_liquidity_quality(daily_quality : pd.DataFrame) -> pd.DataFrame:
     latest_quality = rolling_quality[rolling_quality['session_date'] == latest_session_date].reset_index(drop = True)
 
     return latest_quality
+
 
 def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
     daily_quality_results = []
@@ -67,11 +84,10 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
 
     return daily_quality
 
-# db = SQLiteDB(Path("../data/Pepperstone_market_data_(utc).db"))
-# db.connect()
-# start_time = perf_counter()
-# daily_q = historical_symbols_quality(db, 'M1', date(2026, 8, 1), date(2026, 8, 31))
-# qual = get_symbols_liquidity_quality(daily_q)
+db = SQLiteDB(Path("../data/Pepperstone_market_data_(utc).db"))
+db.connect()
+daily_q = historical_symbols_quality(db, 'M1', date(2026, 8, 1), date(2026, 8, 31))
+qual = get_symbols_liquidity_quality(daily_q)
 # qual.to_excel('daily_quality_statistics.xlsx')
 # daily_q.to_excel('daily_q.xlsx')
-# print(daily_q)
+show_liquidity_params_distribution(qual)
