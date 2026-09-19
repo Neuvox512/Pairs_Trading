@@ -9,10 +9,11 @@ from time import perf_counter
 
 
 
-def get_daily_quality_statistics(daily_quality : pd.DataFrame) -> pd.DataFrame:
+def get_symbols_liquidity_quality(daily_quality : pd.DataFrame) -> pd.DataFrame:
     rolling_quality = (
         daily_quality
         .sort_values(by=['symbol', 'session_date'])
+        .set_index('session_date')
         .groupby('symbol')
         .rolling(window =5)
         .agg(
@@ -59,18 +60,18 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
 
     daily_quality = pd.concat(daily_quality_results, ignore_index = True)
 
-    #Hard filter for fully completed sessions
+    #Hard filter for all trading sessions
     session_counts = daily_quality.groupby('symbol').agg(session_count=('session_date', 'nunique'))
     complete_symbols = session_counts[session_counts['session_count'] == len(trading_dates)]
     daily_quality = daily_quality[daily_quality['symbol'].isin(complete_symbols.index)]
 
     return daily_quality
 
-db = SQLiteDB(Path("Pepperstone_market_data_(utc).db"))
-db.connect()
-start_time = perf_counter()
-daily_q = historical_symbols_quality(db, 'M1', date(2026, 8, 1), date(2026, 8, 31))
-# qual = get_daily_quality_statistics(daily_q)
+# db = SQLiteDB(Path("../data/Pepperstone_market_data_(utc).db"))
+# db.connect()
+# start_time = perf_counter()
+# daily_q = historical_symbols_quality(db, 'M1', date(2026, 8, 1), date(2026, 8, 31))
+# qual = get_symbols_liquidity_quality(daily_q)
 # qual.to_excel('daily_quality_statistics.xlsx')
 # daily_q.to_excel('daily_q.xlsx')
-print(daily_q)
+# print(daily_q)
