@@ -16,11 +16,12 @@ def select_stable_pairs(
 
 
 def historical_screening(
-        db : SQLiteDB,
-        symbols : list[str],
-        timeframe : str,
-        start_date : date,
-        end_date : date) -> pd.DataFrame:
+    db : SQLiteDB,
+    symbols : list[str],
+    timeframe : str,
+    start_date : date,
+    end_date : date
+) -> pd.DataFrame:
 
     trading_dates = get_trading_dates(start_date, end_date)
     historical_data = []

@@ -14,6 +14,7 @@ def filter_symbols_by_liquidity(
         min_tick_volume: float,
         max_spread_pct : float
 ) -> list[str]:
+
     filtered_symbols = symbols_liquidity_quality[
         (symbols_liquidity_quality['coverage_pct'] >= min_coverage_pct)
         & (symbols_liquidity_quality['avg_tick_volume'] >= min_tick_volume)
@@ -57,7 +58,7 @@ def get_symbols_liquidity_quality(daily_quality : pd.DataFrame, window : int = 5
         .groupby('symbol')
         .rolling(window =window)
         .agg(
-            avg_tick_volume = ('count_tick_volume', 'mean'),
+            avg_tick_volume = ('median_tick_volume', 'mean'),
             coverage_pct = ('coverage_pct', 'mean'),
             avg_spread_pct = ('median_spread_pct', 'mean')
         ).reset_index()
@@ -89,7 +90,7 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
             .agg(actual_bars_count = ('time_utc', 'count'),
                  median_close = ('close', 'median'),
                  median_spread_pct = ('spread_pct', 'median'),
-                 count_tick_volume = ('tick_volume', 'sum')
+                 median_tick_volume = ('tick_volume', 'median')
                  )
             .reset_index()
         )
