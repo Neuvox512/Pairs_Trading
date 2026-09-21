@@ -57,7 +57,7 @@ def cointegration(close_prices : pd.DataFrame, symbols : list[str]) -> pd.DataFr
 
 
 def bh_correction(pair_p_values : pd.DataFrame) -> pd.DataFrame:
-    bh_corr = fdrcorrection(pair_p_values['coint_p_value'], alpha=0.05)
+    bh_corr = fdrcorrection(pair_p_values['coint_p_value'], alpha=0.1)
     pair_p_values['adjusted_p_value'] = bh_corr[1]
     pair_p_values['reject_no_coint'] = bh_corr[0]
 

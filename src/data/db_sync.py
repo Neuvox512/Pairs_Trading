@@ -18,7 +18,7 @@ def main() -> None:
     try:
         #Add "start_date" if you would like to load more data from the past
         #Specify timeframe if you would like to load data from other timeframes then 'M1'
-        updated_bars = update_all_symbols(terminal, db, all_us_cfd_symbols, 'M1')
+        updated_bars = update_all_symbols(terminal, db, all_us_cfd_symbols, 'M5')
     finally:
         terminal.close()
 
