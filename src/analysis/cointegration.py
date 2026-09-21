@@ -4,13 +4,13 @@ from statsmodels.stats.multitest import fdrcorrection
 from itertools import combinations
 
 
-def screen_pairs(close_prices : pd.DataFrame) -> pd.DataFrame:
+def screen_pairs(close_prices : pd.DataFrame, fdr_level) -> pd.DataFrame:
     #I(1) condition
     i1_symbols = select_i1_symbols(close_prices)
     #Cointegration
     coint_pairs = cointegration(close_prices, i1_symbols)
     #Benjamini-Hochberg correction
-    corrected_coint_pairs = bh_correction(coint_pairs, 0.1)
+    corrected_coint_pairs = bh_correction(coint_pairs, fdr_level)
 
     return corrected_coint_pairs
 
@@ -56,8 +56,12 @@ def cointegration(close_prices : pd.DataFrame, symbols : list[str]) -> pd.DataFr
     return pd.DataFrame(result)
 
 
-def bh_correction(pair_p_values : pd.DataFrame, significance_level : float = 0.05) -> pd.DataFrame:
-    bh_corr = fdrcorrection(pair_p_values['coint_p_value'], significance_level)
+def bh_correction(pair_p_values : pd.DataFrame, fdr_level : float = 0.05) -> pd.DataFrame:
+    if pair_p_values.empty:
+        print("No p-values to correct")
+        return pair_p_values
+
+    bh_corr = fdrcorrection(pair_p_values['coint_p_value'], fdr_level)
     pair_p_values['adjusted_p_value'] = bh_corr[1]
     pair_p_values['reject_no_coint'] = bh_corr[0]
 
