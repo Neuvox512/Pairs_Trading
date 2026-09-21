@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 import pandas as pd
 import pandas_market_calendars as mcal
 from src.data.timeframes import TIME_FREQUENCIES
@@ -19,6 +19,19 @@ def get_session_prices(db : SQLiteDB, symbols : list[str], timeframe : str,sessi
     close_prices = close_prices.dropna()
 
     return close_prices
+
+
+def get_previous_trading_dates(session_date : date, sessions_count : int) -> list[date]:
+    start_date = session_date - timedelta(days=sessions_count*3)
+
+    trading_dates = get_trading_dates(start_date, session_date)
+
+    previous_trading_dates = []
+    for trading_date in trading_dates:
+        if trading_date < session_date:
+            previous_trading_dates.append(trading_date)
+
+    return previous_trading_dates[-sessions_count:]
 
 
 def get_trading_dates(start_date : date, end_date : date) -> list[date]:
@@ -45,4 +58,3 @@ def get_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.Timest
     )
 
     return market_open, last_bar_time
-

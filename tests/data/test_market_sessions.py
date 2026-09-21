@@ -1,7 +1,14 @@
 from datetime import date
 import pandas as pd
-from src.data.market_session import get_trading_dates, get_session_bar_range
+from src.data.market_session import get_trading_dates, get_session_bar_range, get_previous_trading_dates
 
+
+def test_get_previous_trading_dates() -> None:
+    session_date = date(2026, 1, 10)
+    previous_dates = get_previous_trading_dates(session_date, sessions_count=2)
+
+    assert previous_dates == [date(2026, 1, 8), date(2026, 1, 9)]
+    
 
 def test_get_trading_dates() -> None:
     start_date = date(2026, 1, 1)
