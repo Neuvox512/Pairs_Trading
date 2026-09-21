@@ -4,15 +4,26 @@ from src.analysis.cointegration import (
     cointegration_global_test,
     cointegration_local_test,
     bh_correction,
-    screen_pairs)
+    screen_global_pairs,
+    screen_local_pairs)
 
 
-def test_screen_cointegrated_pairs(sim_close_prices) -> None:
+def test_screen_local_pairs(sim_close_prices) -> None:
+    candidate_pairs = pd.DataFrame({
+        "first_symbol": ['first_i1', 'stationary'],
+        "second_symbol": ['second_i1', 'first_i1']
+    })
+    local_pairs = screen_local_pairs(sim_close_prices, candidate_pairs)
+
+    assert (list(local_pairs[['first_symbol', 'second_symbol']].itertuples(index = False, name = None))
+            == [('first_i1', 'second_i1')])
+
+def test_screen_global_pairs(sim_close_prices) -> None:
     close_prices = sim_close_prices[
         ["first_i1", "second_i1"]
     ]
 
-    results = screen_pairs(close_prices)
+    results = screen_global_pairs(close_prices)
 
     assert len(results) == 1
     assert results.iloc[0]["first_symbol"] == "first_i1"

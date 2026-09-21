@@ -4,12 +4,31 @@ from statsmodels.stats.multitest import fdrcorrection
 from itertools import combinations
 
 
-def screen_pairs(close_prices : pd.DataFrame, fdr_level = 0.1) -> pd.DataFrame:
+def screen_global_pairs(close_prices : pd.DataFrame, fdr_level = 0.1) -> pd.DataFrame:
     #I(1) condition
     i1_symbols = select_i1_symbols(close_prices)
+
     #Cointegration
     coint_pairs = cointegration_global_test(close_prices, i1_symbols)
+
     #Benjamini-Hochberg correction
+    corrected_coint_pairs = bh_correction(coint_pairs, fdr_level)
+
+    return corrected_coint_pairs
+
+
+def screen_local_pairs(close_prices : pd.DataFrame, candidate_pairs : pd.DataFrame, fdr_level = 0.1) -> pd.DataFrame:
+    #I(1) condition
+    i1_symbols = select_i1_symbols(close_prices)
+    pairs_to_test = candidate_pairs[
+        candidate_pairs['first_symbol'].isin(i1_symbols)
+        & candidate_pairs['second_symbol'].isin(i1_symbols)
+    ]
+
+    # Cointegration
+    coint_pairs = cointegration_local_test(close_prices, pairs_to_test)
+
+    # Benjamini-Hochberg correction
     corrected_coint_pairs = bh_correction(coint_pairs, fdr_level)
 
     return corrected_coint_pairs
