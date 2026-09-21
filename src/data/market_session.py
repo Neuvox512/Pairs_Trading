@@ -22,7 +22,7 @@ def get_session_prices(db : SQLiteDB, symbols : list[str], timeframe : str,sessi
 
 
 def get_previous_trading_dates(session_date : date, sessions_count : int) -> list[date]:
-    start_date = session_date - timedelta(days=sessions_count*3)
+    start_date = session_date - timedelta(days=max(sessions_count * 3, 7))
 
     trading_dates = get_trading_dates(start_date, session_date)
 
