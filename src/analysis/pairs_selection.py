@@ -29,6 +29,19 @@ def historical_screening_summary(historical_screening : pd.DataFrame) -> pd.Data
     return pairs_summary
 
 
+def select_candidate_pairs(historical_screening : pd.DataFrame, sessions : int = 2) -> pd.DataFrame:
+    successful_pairs = historical_screening[historical_screening['reject_no_coint']]
+
+    successful_pairs = (
+        successful_pairs.groupby(['first_symbol', 'second_symbol'], as_index=False)
+        .agg(sessions_count = ('session_date', 'nunique'))
+    )
+
+    candidate_pairs = successful_pairs[successful_pairs['sessions_count'] == sessions]
+
+    return candidate_pairs[['first_symbol', 'second_symbol']].reset_index(drop = True)
+
+
 def historical_screening(
     db : SQLiteDB,
     symbols : list[str],
