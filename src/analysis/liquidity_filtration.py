@@ -108,12 +108,3 @@ def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date
     daily_quality = daily_quality[daily_quality['symbol'].isin(complete_symbols.index)]
 
     return daily_quality
-
-# db = SQLiteDB(Path("../data/Pepperstone_market_data_(utc).db"))
-# db.connect()
-# daily_q = historical_symbols_quality(db, 'M1', date(2026, 8, 1), date(2026, 8, 31))
-# qual = get_symbols_liquidity_quality(daily_q)
-# # qual.to_excel('daily_quality_statistics.xlsx')
-# # daily_q.to_excel('daily_q.xlsx')
-# # print(get_liquidity_params_quantiles(qual))
-# print(filter_symbols_by_liquidity(qual, 98, 2400, 0.08))

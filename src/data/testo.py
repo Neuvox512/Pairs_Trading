@@ -21,11 +21,11 @@ def main() -> None:
     timeframe = "M1"
     database = SQLiteDB(Path(SQLITE_DB_PATH))
 
-    liquidity_start_date = date(2026, 2, 20)
-    liquidity_end_date = date(2026, 3, 20)
+    liquidity_start_date = date(2026, 2, 27)
+    liquidity_end_date = date(2026, 3, 27)
 
-    cointegration_start_date = date(2026, 3, 23)
-    cointegration_end_date = date(2026, 3, 27)
+    cointegration_start_date = date(2026, 3, 30)
+    cointegration_end_date = date(2026, 4, 3)
 
     start_time = perf_counter()
 

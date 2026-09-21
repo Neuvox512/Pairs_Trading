@@ -10,7 +10,7 @@ def screen_pairs(close_prices : pd.DataFrame) -> pd.DataFrame:
     #Cointegration
     coint_pairs = cointegration(close_prices, i1_symbols)
     #Benjamini-Hochberg correction
-    corrected_coint_pairs = bh_correction(coint_pairs)
+    corrected_coint_pairs = bh_correction(coint_pairs, 0.1)
 
     return corrected_coint_pairs
 
@@ -56,8 +56,8 @@ def cointegration(close_prices : pd.DataFrame, symbols : list[str]) -> pd.DataFr
     return pd.DataFrame(result)
 
 
-def bh_correction(pair_p_values : pd.DataFrame) -> pd.DataFrame:
-    bh_corr = fdrcorrection(pair_p_values['coint_p_value'], alpha=0.1)
+def bh_correction(pair_p_values : pd.DataFrame, significance_level : float = 0.05) -> pd.DataFrame:
+    bh_corr = fdrcorrection(pair_p_values['coint_p_value'], significance_level)
     pair_p_values['adjusted_p_value'] = bh_corr[1]
     pair_p_values['reject_no_coint'] = bh_corr[0]
 
