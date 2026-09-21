@@ -4,7 +4,7 @@ from statsmodels.stats.multitest import fdrcorrection
 from itertools import combinations
 
 
-def screen_pairs(close_prices : pd.DataFrame, fdr_level) -> pd.DataFrame:
+def screen_pairs(close_prices : pd.DataFrame, fdr_level = 0.1) -> pd.DataFrame:
     #I(1) condition
     i1_symbols = select_i1_symbols(close_prices)
     #Cointegration
@@ -35,9 +35,16 @@ def select_i1_symbols(close_prices : pd.DataFrame, significance_level : float = 
     return selected_symbols
 
 
-def cointegration(close_prices : pd.DataFrame, symbols : list[str]) -> pd.DataFrame:
+def cointegration_global_test(close_prices : pd.DataFrame, symbols : list[str]) -> pd.DataFrame:
+    pairs =  list(combinations(symbols, 2))
+
+    return calculate_coint_p_values(close_prices, pairs)
+
+
+def calculate_coint_p_values(close_prices: pd.DataFrame, pairs: list[str]) -> pd.DataFrame:
     result = []
-    for symbol_1, symbol_2 in combinations(symbols, 2):
+
+    for symbol_1, symbol_2 in pairs:
         test_statistic, p_value, critical_values = coint(
             close_prices[symbol_1],
             close_prices[symbol_2],
