@@ -2,8 +2,9 @@ from src.data.market_session import *
 from src.analysis.cointegration import (
     select_i1_symbols,
     cointegration_global_test,
+    cointegration_local_test,
     bh_correction,
-screen_pairs)
+    screen_pairs)
 
 
 def test_screen_cointegrated_pairs(sim_close_prices) -> None:
@@ -41,6 +42,17 @@ def test_cointegration_global_test(sim_close_prices) -> None:
     first_second_p_value = pair_results.iloc[0]["coint_p_value"]
 
     assert first_second_p_value < 0.05
+
+
+def test_cointegration_local_test(sim_close_prices) -> None:
+    candidate_pairs = pd.DataFrame({
+        "first_symbol": ['first_i1', 'indep_i1'],
+        "second_symbol": ['second_i1', 'first_i1']
+    })
+    local_coint = cointegration_local_test(sim_close_prices, candidate_pairs)
+    actual_pairs = list(candidate_pairs[['first_symbol', 'second_symbol']].itertuples(index=False, name = None))
+
+    assert list(local_coint[['first_symbol', 'second_symbol']].itertuples(index=False, name = None)) == actual_pairs
 
 
 def test_bh_correction() -> None:

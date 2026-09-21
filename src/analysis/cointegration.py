@@ -41,6 +41,12 @@ def cointegration_global_test(close_prices : pd.DataFrame, symbols : list[str]) 
     return calculate_coint_p_values(close_prices, pairs)
 
 
+def cointegration_local_test(close_prices : pd.DataFrame, candidate_pairs : pd.DataFrame) -> pd.DataFrame:
+    pairs = list(candidate_pairs[['first_symbol', 'second_symbol']].itertuples(index=False, name=None))
+
+    return calculate_coint_p_values(close_prices, pairs)
+
+
 def calculate_coint_p_values(close_prices: pd.DataFrame, pairs: list[tuple[str, str]]) -> pd.DataFrame:
     result = []
 
