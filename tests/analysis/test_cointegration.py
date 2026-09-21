@@ -1,7 +1,7 @@
 from src.data.market_session import *
 from src.analysis.cointegration import (
     select_i1_symbols,
-    cointegration,
+    cointegration_global_test,
     bh_correction,
 screen_pairs)
 
@@ -33,8 +33,8 @@ def test_select_i1_symbols(sim_close_prices) -> None:
     assert set(selected_symbols) == {"first_symbol", "second_symbol"}
 
 
-def test_cointegration(sim_close_prices) -> None:
-    pair_results = cointegration(sim_close_prices, ["first_i1", "second_i1", "indep_i1"])
+def test_cointegration_global_test(sim_close_prices) -> None:
+    pair_results = cointegration_global_test(sim_close_prices, ["first_i1", "second_i1", "indep_i1"])
 
     assert pair_results["coint_p_value"].between(0, 1).all()
 
