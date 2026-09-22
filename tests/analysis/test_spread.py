@@ -1,8 +1,32 @@
 import pytest
-from src.analysis.spread import fit_spread_parameters, calculate_pair_spread_z_score, calculate_pair_spread
+import pandas as pd
+import numpy as np
+from src.analysis.spread import (
+    fit_spread_parameters,
+    calculate_pair_spread_z_score,
+    calculate_pair_spread,
+    calculate_spread_half_life)
 
 
-def test_calculate_pairs_spread_z_score(sim_close_prices) -> None:
+def test_calculate_spread_half_life(sim_close_prices) -> None:
+    theta = 0.5
+    mean_spread = 5.0
+    spread_values = [10.0]
+
+    for i in range(100):
+        prev_spread = spread_values[-1]
+        current_spread = -theta * (prev_spread - mean_spread) + prev_spread
+        spread_values.append(current_spread)
+
+    spread = pd.Series(spread_values)
+
+    half_life = calculate_spread_half_life(spread)
+    expected_half_life = np.log(2)/theta
+
+    assert half_life == pytest.approx(expected_half_life, abs=0.005)
+
+
+def test_calculate_pair_spread_z_score(sim_close_prices) -> None:
     first_symbol = "first_i1"
     second_symbol = "second_i1"
 
