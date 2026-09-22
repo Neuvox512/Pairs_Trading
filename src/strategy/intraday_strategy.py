@@ -13,7 +13,7 @@ def confirm_local_candidate_pairs (
         timeframe : str,
         session_date : date,
         opening_minutes : int = 90,
-        fdr_level : float = 0.5
+        fdr_level : float = 0.1
 ):
 
     candidate_symbols = pd.concat(
@@ -40,7 +40,7 @@ def get_local_prices (
 
     local_start_time, local_end_time = get_local_session_bar_range(session_date, timeframe, opening_minutes)
 
-    local_close_prices = db.load_close_prices(symbols, 'M1', local_start_time, local_end_time)
+    local_close_prices = db.load_close_prices(symbols, timeframe, local_start_time, local_end_time)
     local_close_prices = local_close_prices.ffill().dropna()
 
     return local_close_prices
