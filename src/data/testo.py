@@ -3,7 +3,7 @@ from pathlib import Path
 from time import perf_counter
 
 from src.analysis.liquidity_filtration import (
-    historical_symbols_quality,
+    get_historical_symbols_quality,
     get_symbols_liquidity_quality,
     get_liquidity_params_quantiles,
     filter_symbols_by_liquidity,
@@ -30,12 +30,8 @@ def main() -> None:
     start_time = perf_counter()
 
     # 1. Получаем дневную статистику качества за август.
-    daily_quality = historical_symbols_quality(
-        db=database,
-        timeframe=timeframe,
-        start_date=liquidity_start_date,
-        end_date=liquidity_end_date,
-    )
+    daily_quality = get_historical_symbols_quality(db=database, timeframe=timeframe, start_date=liquidity_start_date,
+                                                   end_date=liquidity_end_date)
 
     # 2. Рассчитываем показатели за последние 5 сессий августа.
     liquidity_quality = get_symbols_liquidity_quality(

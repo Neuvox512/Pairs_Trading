@@ -1,9 +1,8 @@
 from datetime import date
 import pandas as pd
 from src.data.sqlite_db import SQLiteDB
-from src.data.market_session import get_session_bar_range, get_trading_dates
+from src.data.market_session import get_full_session_bar_range, get_trading_dates
 from src.data.timeframes import TIME_FREQUENCIES
-from pathlib import Path
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 
@@ -69,12 +68,12 @@ def get_symbols_liquidity_quality(daily_quality : pd.DataFrame, window : int = 5
     return latest_quality
 
 
-def historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
+def get_historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
     daily_quality_results = []
     trading_dates = get_trading_dates(start_date, end_date)
 
     for session_date in tqdm(trading_dates):
-        session_bar_range = get_session_bar_range(session_date, timeframe)
+        session_bar_range = get_full_session_bar_range(session_date, timeframe)
         if session_bar_range is None:
             print("No session in this date")
             return None

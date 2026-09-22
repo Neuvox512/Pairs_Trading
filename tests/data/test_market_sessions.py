@@ -1,6 +1,10 @@
 from datetime import date
 import pandas as pd
-from src.data.market_session import get_trading_dates, get_session_bar_range, get_previous_trading_dates
+from src.data.market_session import (
+    get_trading_dates,
+    get_full_session_bar_range,
+    get_previous_trading_dates,
+    get_local_session_bar_range)
 
 
 def test_get_previous_trading_dates() -> None:
@@ -24,16 +28,33 @@ def test_get_trading_dates() -> None:
                              date(2026, 1, 9)]
 
 
-def test_get_session_bar_range () -> None:
+def test_local_session_bar_range() -> None:
+    session_date = date(2026, 8, 3)
+    timeframe = 'M1'
+    local_session_bar_range = get_local_session_bar_range(session_date, timeframe, 90)
+
+    assert local_session_bar_range == (
+        pd.Timestamp('2026-08-03 13:30:00+0000', tz='UTC'),
+        pd.Timestamp('2026-08-03 14:59:00+0000', tz='UTC'))
+
+    timeframe = 'M5'
+    local_session_bar_range = get_local_session_bar_range(session_date, timeframe, 90)
+
+    assert local_session_bar_range == (
+        pd.Timestamp('2026-08-03 13:30:00+0000', tz='UTC'),
+        pd.Timestamp('2026-08-03 14:55:00+0000', tz='UTC'))
+
+
+def test_get_full_session_bar_range () -> None:
     #Weekend (sunday)
     session_date = date(2026, 8, 2)
-    session_bar_range = get_session_bar_range(session_date, 'M1')
+    session_bar_range = get_full_session_bar_range(session_date, 'M1')
 
     assert session_bar_range is None
 
     #Workday (monday)
     session_date = date(2026, 8, 3)
-    session_bar_range = get_session_bar_range(session_date, 'M1')
+    session_bar_range = get_full_session_bar_range(session_date, 'M1')
 
     assert session_bar_range[0] == pd.Timestamp("2026-08-03 13:30:00", tz="UTC")
     assert session_bar_range[1] == pd.Timestamp("2026-08-03 19:59:00", tz="UTC")

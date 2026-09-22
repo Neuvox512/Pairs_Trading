@@ -9,7 +9,7 @@ MARKET_CALENDAR = mcal.get_calendar(STOCK_MARKET_CALENDAR)
 
 
 def get_session_prices(db : SQLiteDB, symbols : list[str], timeframe : str,session_date : date):
-    session_range = get_session_bar_range(session_date, timeframe)
+    session_range = get_full_session_bar_range(session_date, timeframe)
 
     if session_range is None:
         return pd.DataFrame()
@@ -44,7 +44,19 @@ def get_trading_dates(start_date : date, end_date : date) -> list[date]:
     return trading_dates
 
 
-def get_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.Timestamp, pd.Timestamp] | None:
+def get_local_session_bar_range(
+        session_date : date,
+        timeframe : str,
+        opening_minutes : int
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+
+    market_open, market_close = get_full_session_bar_range(session_date, timeframe)
+    local_end_range = market_open + pd.Timedelta(minutes=opening_minutes) - pd.Timedelta(TIME_FREQUENCIES[timeframe])
+
+    return market_open, local_end_range
+
+
+def get_full_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.Timestamp, pd.Timestamp] | None:
     schedule = MARKET_CALENDAR.schedule(start_date=session_date, end_date=session_date, tz='UTC')
 
     if schedule.empty:
