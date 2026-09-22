@@ -3,6 +3,7 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 
 
+#Ornstein-Uhlenbeck discrete formula was used to calculate half-life
 def calculate_spread_half_life(pair_spread : pd.Series) -> float | None:
     lag_spread = pair_spread.shift(1).dropna()
     d_spread = pair_spread - lag_spread

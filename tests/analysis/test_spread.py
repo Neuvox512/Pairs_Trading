@@ -8,7 +8,7 @@ from src.analysis.spread import (
     calculate_spread_half_life)
 
 
-def test_calculate_spread_half_life(sim_close_prices) -> None:
+def test_calculate_spread_half_life() -> None:
     theta = 0.5
     mean_spread = 5.0
     spread_values = [10.0]
