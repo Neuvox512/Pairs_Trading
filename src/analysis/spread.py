@@ -3,7 +3,7 @@ from sklearn.linear_model import LinearRegression
 
 
 def fit_spread_parameters(pair_prices : pd.DataFrame, first_symbol : str, second_symbol : str) -> tuple[float, float]:
-    dependent_prices = pair_prices[[first_symbol]]
+    dependent_prices = pair_prices[first_symbol]
     independent_prices = pair_prices[[second_symbol]]
 
     regression_model = LinearRegression()
