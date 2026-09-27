@@ -17,7 +17,9 @@ def prepare_trading_day(
         db : SQLiteDB,
         session_date : date,
         timeframe : str,
-        liquidity_quantile : float,
+        min_coverage_quantile : float = 0.9,
+        min_tick_volume_quantile : float = 0.9,
+        max_spread_quantile : float = 0.9,
 ) -> pd.DataFrame:
 
     liquidity_dates, coint_dates = get_strat_dates(session_date)
@@ -25,15 +27,18 @@ def prepare_trading_day(
     filters = get_liquidity_params_quantiles(symbols_liquidity)
     filtered_symbols = filter_symbols_by_liquidity(
         symbols_liquidity,
-        min_coverage_pct=filters.loc[f'{liquidity_quantile}', 'coverage_pct'],
-        min_tick_volume=filters.loc[f'{liquidity_quantile}', 'avg_tick_volume'],
-        max_spread_pct=filters.loc[f'{liquidity_quantile}', 'avg_spread_pct']
+        min_coverage_pct=filters.loc[min_coverage_quantile, 'coverage_pct'],
+        min_tick_volume=filters.loc[min_tick_volume_quantile, 'avg_tick_volume'],
+        max_spread_pct=filters.loc[max_spread_quantile, 'avg_spread_pct']
     )
 
     if len(filtered_symbols) < 2:
         return pd.DataFrame()
 
     global_candidate_pairs = get_global_candidate_pairs(db, filtered_symbols, timeframe, coint_dates)
+
+    if global_candidate_pairs.empty:
+        return pd.DataFrame()
 
     confirmed_pairs = confirm_local_candidate_pairs(db, global_candidate_pairs, timeframe, session_date)
 
@@ -77,6 +82,9 @@ def confirm_local_candidate_pairs (
 
     local_prices = get_local_prices(db, candidate_symbols, session_date, timeframe, opening_minutes)
     local_screening = screen_local_pairs(local_prices, candidate_pairs, fdr_level)
+    if local_screening.empty:
+        return pd.DataFrame()
+
     confirmed_pairs = local_screening[local_screening['reject_no_coint']]
 
     return confirmed_pairs.reset_index(drop=True)
