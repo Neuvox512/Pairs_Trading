@@ -12,7 +12,8 @@ def calculate_pairs_parameters(
 
     params = []
 
-    for first_symbol, second_symbol in candidate_pairs[['first_symbol', 'second_symbol']].itertuples():
+    for first_symbol, second_symbol in (candidate_pairs[['first_symbol', 'second_symbol']]
+            .itertuples(index=False, name=None)):
         intercept, hedge_ratio = fit_spread_parameters(pair_prices, first_symbol, second_symbol)
         spread = calculate_pair_spread(pair_prices, first_symbol, second_symbol, intercept, hedge_ratio)
         spread_mean = spread.mean()
