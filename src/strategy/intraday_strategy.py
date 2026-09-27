@@ -5,6 +5,23 @@ from src.analysis.liquidity_filtration import get_historical_symbols_quality, ge
 from src.data.sqlite_db import SQLiteDB
 from src.analysis.pairs_selection import historical_screening, select_candidate_pairs
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
+from src.analysis.pairs_parameters_calculation import calculate_pairs_parameters
+from src.data.market_session import get_session_prices
+
+
+def get_pairs_parameters(
+        db : SQLiteDB,
+        confirmed_pairs : pd.DataFrame,
+        timeframe : str,
+        coint_dates : list[date],
+) -> pd.DataFrame:
+
+    if confirmed_pairs.empty:
+        return pd.DataFrame()
+
+
+
+    parameters = calculate_pairs_parameters(confirmed_pairs, timeframe, coint_dates)
 
 
 def confirm_local_candidate_pairs (
@@ -14,7 +31,7 @@ def confirm_local_candidate_pairs (
         session_date : date,
         opening_minutes : int = 90,
         fdr_level : float = 0.1
-):
+) -> pd.DataFrame:
 
     candidate_symbols = pd.concat(
             [
