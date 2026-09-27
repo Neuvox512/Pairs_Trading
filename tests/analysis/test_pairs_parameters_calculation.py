@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from src.analysis.spread import (
+from src.analysis.pairs_parameters_calculation import (
     fit_spread_parameters,
     calculate_pair_spread_z_score,
     calculate_pair_spread,

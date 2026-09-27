@@ -6,29 +6,6 @@ from src.data.market_session import get_trading_dates, get_session_prices
 from tqdm import tqdm
 
 
-def select_stable_pairs(
-        pairs_summary : pd.DataFrame,
-        min_test_sessions : int,
-        min_persistence : float) -> pd.DataFrame:
-    selected_pairs = pairs_summary[
-        (pairs_summary['persistence'] >= min_persistence)
-        & (pairs_summary['tested_sessions'] >= min_test_sessions)
-    ]
-
-    return selected_pairs
-
-
-def historical_screening_summary(historical_screening : pd.DataFrame) -> pd.DataFrame:
-    pairs_summary = historical_screening.groupby(['first_symbol', 'second_symbol'], as_index=False).agg(
-        tested_sessions=('session_date', 'nunique'),
-        coint_sessions=('reject_no_coint', 'sum')
-    )
-    pairs_summary['total_sessions'] = historical_screening['session_date'].nunique()
-    pairs_summary['persistence'] = (pairs_summary['coint_sessions'] / pairs_summary['total_sessions'])
-
-    return pairs_summary
-
-
 def select_candidate_pairs(historical_screening : pd.DataFrame, sessions : int = 2) -> pd.DataFrame:
     successful_pairs = historical_screening[historical_screening['reject_no_coint']]
 
@@ -43,11 +20,11 @@ def select_candidate_pairs(historical_screening : pd.DataFrame, sessions : int =
 
 
 def historical_screening(
-    db : SQLiteDB,
-    symbols : list[str],
-    timeframe : str,
-    start_date : date,
-    end_date : date
+        db : SQLiteDB,
+        symbols : list[str],
+        timeframe : str,
+        start_date : date,
+        end_date : date
 ) -> pd.DataFrame:
 
     trading_dates = get_trading_dates(start_date, end_date)
