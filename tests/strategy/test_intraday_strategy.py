@@ -5,7 +5,6 @@ from src.strategy.intraday_strategy import (
     confirm_local_candidate_pairs,
     get_local_prices,
     get_pairs_parameters)
-from tests.analysis.conftest import sim_db
 
 
 def test_get_pairs_parameters(sim_db) -> None:
