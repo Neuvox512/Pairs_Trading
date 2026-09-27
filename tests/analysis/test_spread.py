@@ -12,14 +12,22 @@ def test_calculate_spread_half_life() -> None:
     theta = 0.5
     mean_spread = 5.0
     spread_values = [10.0]
+    times = [pd.Timestamp('"2026-09-03 13:30:00"')]
 
     for i in range(100):
         prev_spread = spread_values[-1]
         current_spread = -theta * (prev_spread - mean_spread) + prev_spread
         spread_values.append(current_spread)
 
-    spread = pd.Series(spread_values)
+        if i < 50:
+            time = pd.Timestamp('2026-09-03 19:00:00') + pd.Timedelta(minutes=i)
+            times.append(time)
+        else:
+            time = pd.Timestamp('2026-09-04 13:00:00') + pd.Timedelta(minutes=i)
+            times.append(time)
 
+    spread = pd.Series(spread_values, index = times)
+    print(spread)
     half_life = calculate_spread_half_life(spread, 'M1')
     expected_half_life = np.log(2)/theta
 
