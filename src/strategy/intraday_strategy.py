@@ -19,7 +19,7 @@ def prepare_trading_day(
         timeframe : str,
         min_coverage_quantile : float = 0.9,
         min_tick_volume_quantile : float = 0.9,
-        max_spread_quantile : float = 0.9,
+        max_spread_quantile : float = 0.1,
 ) -> pd.DataFrame:
 
     liquidity_dates, coint_dates = get_strat_dates(session_date)

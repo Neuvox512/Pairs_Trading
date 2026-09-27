@@ -8,16 +8,6 @@ from src.strategy.intraday_strategy import (
     prepare_trading_day)
 
 
-# def test_prepare_trading_day(sim_db) -> None:
-#     session_date = date(2026, 8, 4)
-#     timeframe = "M1"
-#     liquidity_quantile = 0.9
-#
-#     trading_day_params = prepare_trading_day(sim_db, session_date, timeframe, liquidity_quantile)
-#
-#     print(trading_day_params)
-
-
 def test_get_pairs_parameters(sim_db) -> None:
     confirmed_pairs = pd.DataFrame(
         {

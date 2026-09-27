@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from src.data.sqlite_db import SQLiteDB
-from src.data.market_session import get_session_prices
+from src.data.market_session import get_session_prices, get_trading_dates
 from datetime import date
 
 
