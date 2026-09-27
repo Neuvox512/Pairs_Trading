@@ -66,13 +66,11 @@ def calculate_spread_half_life(pair_spread : pd.Series, timeframe : str) -> floa
     return half_life
 
 
-def calculate_pair_spread_z_score(local_spread : pd.Series, global_spread : pd.Series) -> pd.Series:
-    global_mean = global_spread.mean()
-    global_std = global_spread.std()
+def calculate_pair_spread_z_score(local_spread : pd.Series, global_spread_mean, global_spread_std) -> pd.Series:
+    if global_spread_std <= 0:
+        raise ValueError('global_spread_std should be positive')
 
-    z_score = (local_spread - global_mean)/global_std
-
-    return z_score
+    return (local_spread - global_spread_mean)/global_spread_std
 
 
 def calculate_pair_spread(

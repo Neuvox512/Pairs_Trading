@@ -10,7 +10,7 @@ from src.data.sqlite_db import SQLiteDB
 from src.analysis.pairs_selection import historical_screening, select_candidate_pairs
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
 from src.analysis.pairs_parameters_calculation import calculate_pairs_parameters
-from src.data.market_session import get_session_prices
+from src.data.market_session import get_session_prices, get_full_session_bar_range
 
 
 def prepare_trading_day(
@@ -21,6 +21,9 @@ def prepare_trading_day(
         min_tick_volume_quantile : float = 0.9,
         max_spread_quantile : float = 0.1,
 ) -> pd.DataFrame:
+
+    if get_full_session_bar_range(session_date, timeframe) is None:
+        raise ValueError(f'No session in date {session_date}')
 
     liquidity_dates, coint_dates = get_strat_dates(session_date)
     symbols_liquidity = get_symbols_liquidity(db, timeframe, liquidity_dates[0], liquidity_dates[-1])
@@ -148,3 +151,61 @@ def get_strat_dates(
 
     return liquidity_dates, coint_dates
 
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+    from time import perf_counter
+    from src.config import SQLITE_DB_PATH
+
+    db_path = Path(SQLITE_DB_PATH)
+
+    if not db_path.is_file():
+        raise FileNotFoundError(f"Database not found: {db_path}")
+
+    count = []
+    db = SQLiteDB(db_path)
+    for i in range(1,30):
+        try:
+            session_date = date(2026, 4, 31-i)
+            timeframe = "M1"
+
+            liquidity_dates, coint_dates = get_strat_dates(session_date)
+
+            print("Торговая дата:", session_date)
+            print("Таймфрейм:", timeframe)
+            print(
+                "Период оценки ликвидности:",
+                liquidity_dates[0],
+                "—",
+                liquidity_dates[-1],
+            )
+            print("Сессий для ликвидности:", len(liquidity_dates))
+            print("Сессии для коинтеграции:", coint_dates)
+            print("Утреннее подтверждение: первые 90 минут")
+
+            start = perf_counter()
+
+            pairs_parameters = prepare_trading_day(
+                db=db,
+                session_date=session_date,
+                timeframe=timeframe,
+                min_coverage_quantile=0.9,
+                min_tick_volume_quantile=0.9,
+                max_spread_quantile=0.25,
+            )
+
+            print("\nИтоговых пар:", len(pairs_parameters))
+
+            if pairs_parameters.empty:
+                print("На выбранную дату подходящих пар нет.")
+            else:
+                print(pairs_parameters.to_string(index=False))
+                count.append(len(pairs_parameters))
+
+            print(f"\nВремя выполнения: {perf_counter() - start:.2f} секунд")
+        except:
+            print (f'Выходной в {session_date}')
+
+    print (count)
+    print (len(count))
