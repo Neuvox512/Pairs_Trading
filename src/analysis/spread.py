@@ -19,7 +19,7 @@ def calculate_spread_half_life(pair_spread : pd.Series, timeframe : str) -> floa
     real_dt = pair_spread.index.to_series().diff()
     consecutive_bars = (real_dt == pd.Timedelta(minutes=dt))
 
-    reg_data = reg_data.dropna()
+    reg_data = reg_data[consecutive_bars].dropna()
     x = reg_data[['lag_spread']]
     y = reg_data['diff_spread'] / dt
 

@@ -16,7 +16,7 @@ def test_calculate_spread_half_life() -> None:
 
     for i in range(100):
         if i == 50:
-            current_spread = 10
+            current_spread = 100000000
             spread_values.append(current_spread)
         else:
             prev_spread = spread_values[-1]
@@ -34,7 +34,7 @@ def test_calculate_spread_half_life() -> None:
     half_life = calculate_spread_half_life(spread, 'M1')
     expected_half_life = np.log(2)/theta
 
-    assert half_life != pytest.approx(expected_half_life, abs=0.005)
+    assert half_life == pytest.approx(expected_half_life, abs=0.005)
 
 
 def test_calculate_pair_spread_z_score(sim_close_prices) -> None:
