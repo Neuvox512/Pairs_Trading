@@ -12,3 +12,9 @@ TIME_FREQUENCIES = {
     "M5": '5min',
     "M15": '15min'
 }
+
+TIME_MINUTES = {
+    "M1": 1,
+    "M5": 5,
+    "M15": 15
+}

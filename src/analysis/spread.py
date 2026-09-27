@@ -1,19 +1,21 @@
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 import numpy as np
+from src.data.timeframes import TIME_MINUTES
 
 
-#Ornstein-Uhlenbeck discrete formula was used to calculate half-life
-def calculate_spread_half_life(pair_spread : pd.Series) -> float | None:
+#Ornstein-Uhlenbeck formula was used to calculate half-life
+#ds = theta(mu - s)dt + sigma * dW
+#ds/dt = theta * mu - theta * s + sigma * dW    OR    Y = const - beta * X + residuals
+def calculate_spread_half_life(pair_spread : pd.Series, timeframe : str) -> float | None:
+    dt = TIME_MINUTES[timeframe]
     lag_spread = pair_spread.shift(1).dropna()
-    d_spread = pair_spread - lag_spread
-    d_spread = d_spread.dropna()
-    mean_spread = lag_spread.mean()
-    x = lag_spread - mean_spread
-    x = x.to_frame()
+    Y = (pair_spread - lag_spread) / dt
+    Y = Y.dropna()
+    X = lag_spread.to_frame()
 
-    regression_model = LinearRegression(fit_intercept=False)
-    regression_model.fit(x, d_spread)
+    regression_model = LinearRegression()
+    regression_model.fit(X, Y)
 
     theta = regression_model.coef_[0]
     if theta >= 0:

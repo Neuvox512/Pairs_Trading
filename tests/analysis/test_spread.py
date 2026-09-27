@@ -20,7 +20,7 @@ def test_calculate_spread_half_life() -> None:
 
     spread = pd.Series(spread_values)
 
-    half_life = calculate_spread_half_life(spread)
+    half_life = calculate_spread_half_life(spread, 'M1')
     expected_half_life = np.log(2)/theta
 
     assert half_life == pytest.approx(expected_half_life, abs=0.005)
