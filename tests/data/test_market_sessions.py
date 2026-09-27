@@ -4,7 +4,19 @@ from src.data.market_session import (
     get_trading_dates,
     get_full_session_bar_range,
     get_previous_trading_dates,
-    get_local_session_bar_range)
+    get_local_session_bar_range,
+    get_session_prices)
+
+
+def test_get_session_prices(sim_db) -> None:
+    session_date = date(2026, 8, 3)
+    symbols = ['first_i1', 'indep_i1', 'stationary', 'second_i1']
+    timeframe = 'M1'
+
+    session_prices = get_session_prices(sim_db, symbols, timeframe, session_date )
+
+    assert len(session_prices) == 390
+    assert  session_prices.columns.tolist() == ['first_i1', 'indep_i1', 'second_i1', 'stationary']
 
 
 def test_get_previous_trading_dates() -> None:

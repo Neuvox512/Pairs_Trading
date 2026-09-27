@@ -19,9 +19,18 @@ def get_pairs_parameters(
     if confirmed_pairs.empty:
         return pd.DataFrame()
 
+    confirmed_symbols = list(set(confirmed_pairs['first_symbol'].tolist() + confirmed_pairs['second_symbol'].tolist()))
+    history = []
 
+    for session in coint_dates:
+        session_prices = get_session_prices(db, confirmed_symbols, timeframe, session)
+        history.append(session_prices)
 
-    parameters = calculate_pairs_parameters(confirmed_pairs, timeframe, coint_dates)
+    historical_prices = pd.concat(history)
+
+    parameters = calculate_pairs_parameters(historical_prices, confirmed_pairs, timeframe)
+
+    return parameters
 
 
 def confirm_local_candidate_pairs (
@@ -33,14 +42,9 @@ def confirm_local_candidate_pairs (
         fdr_level : float = 0.1
 ) -> pd.DataFrame:
 
-    candidate_symbols = pd.concat(
-            [
-                candidate_pairs['first_symbol'],
-                candidate_pairs['second_symbol']
-            ], ignore_index=True
-        ).drop_duplicates().tolist()
+    candidate_symbols = list(set(candidate_pairs['first_symbol'].tolist() + candidate_pairs['second_symbol'].tolist()))
 
-    local_prices =get_local_prices(db, candidate_symbols, session_date, timeframe, opening_minutes)
+    local_prices = get_local_prices(db, candidate_symbols, session_date, timeframe, opening_minutes)
     local_screening = screen_local_pairs(local_prices, candidate_pairs, fdr_level)
     confirmed_pairs = local_screening[local_screening['reject_no_coint']]
 
