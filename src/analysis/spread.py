@@ -9,19 +9,22 @@ from src.data.timeframes import TIME_MINUTES
 #ds/dt = theta * mu - theta * s + stochastic_term    OR    Y = const - beta * X + residuals
 def calculate_spread_half_life(pair_spread : pd.Series, timeframe : str) -> float | None:
     dt = TIME_MINUTES[timeframe]
-    reg_data = {
+    reg_data = pd.DataFrame(
+        {
         'lag_spread' : pair_spread.shift(1),
         'diff_spread' : pair_spread.diff()
-    }
+        }
+    )
+
     real_dt = pair_spread.index.to_series().diff()
     consecutive_bars = (real_dt == pd.Timedelta(minutes=dt))
 
-    reg_data = reg_data[consecutive_bars].dropna()
-    X = reg_data[['lag_spread']]
-    Y = reg_data['diff_spread']
+    reg_data = reg_data.dropna()
+    x = reg_data[['lag_spread']]
+    y = reg_data['diff_spread'] / dt
 
     regression_model = LinearRegression()
-    regression_model.fit(X, Y)
+    regression_model.fit(x, y)
 
     theta = regression_model.coef_[0]
     if theta >= 0:
