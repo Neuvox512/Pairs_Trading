@@ -6,22 +6,29 @@ from src.analysis.pairs_parameters_calculation import (
     calculate_pair_spread_z_score,
     calculate_pair_spread,
     calculate_spread_half_life,
-    calculate_pair_parameters)
+    calculate_pairs_parameters)
 
 
 def test_calculate_pair_parameters(sim_close_prices) -> None:
-    first_symbol = "first_i1"
-    second_symbol = "second_i1"
+    candidate_pairs = pd.DataFrame({'first_symbol': 'first_i1', 'second_symbol': 'second_i1'})
     timeframe = "M1"
-    intercept, hedge_ratio = fit_spread_parameters(sim_close_prices, first_symbol, second_symbol)
-    spread = calculate_pair_spread(sim_close_prices, first_symbol, second_symbol, intercept, hedge_ratio)
+    params = calculate_pairs_parameters(candidate_pairs, candidate_pairs, timeframe)
+
+    intercept, hedge_ratio = fit_spread_parameters(
+        sim_close_prices,
+        candidate_pairs['first_symbol'].iloc[0],
+        candidate_pairs['second_symbol'].iloc[0]
+    )
+    spread = calculate_pair_spread(
+        sim_close_prices,
+        candidate_pairs['first_symbol'].iloc[0],
+        candidate_pairs['second_symbol'].iloc[0],
+        intercept, hedge_ratio
+    )
     half_life = calculate_spread_half_life(spread, timeframe)
 
-    params = calculate_pair_parameters(sim_close_prices, first_symbol, second_symbol, timeframe)
-
-
-    assert first_symbol == 'first_i1'
-    assert second_symbol == 'second_i1'
+    assert params['first_symbol'] == 'first_i1'
+    assert params['second_symbol'] == 'second_i1'
     assert params['intercept']  == pytest.approx(intercept, abs=0.005)
     assert params['hedge_ratio']  == pytest.approx(hedge_ratio, abs=0.005)
     assert params ['spread_mean'] == pytest.approx(spread.mean(), abs=0.005)

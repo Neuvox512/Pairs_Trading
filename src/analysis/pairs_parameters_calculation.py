@@ -4,30 +4,34 @@ import numpy as np
 from src.data.timeframes import TIME_MINUTES
 
 
-def calculate_pair_parameters(
+def calculate_pairs_parameters(
         pair_prices : pd.DataFrame,
-        first_symbol : str,
-        second_symbol : str,
+        candidate_pairs : pd.DataFrame,
         timeframe : str
 ) -> pd.DataFrame:
 
-    intercept, hedge_ratio = fit_spread_parameters(pair_prices, first_symbol, second_symbol)
-    spread = calculate_pair_spread(pair_prices, first_symbol, second_symbol, intercept, hedge_ratio)
-    spread_mean = spread.mean()
-    spread_std = spread.std()
-    half_life = calculate_spread_half_life(spread, timeframe)
+    params = []
 
-    params = {
-        'first_symbol' : first_symbol,
-        'second_symbol' : second_symbol,
-        'intercept' : intercept,
-        'hedge_ratio' : hedge_ratio,
-        'spread_mean' : spread_mean,
-        'spread_std' : spread_std,
-        'half_life_(minutes)' : half_life,
-    }
+    for first_symbol, second_symbol in candidate_pairs[['first_symbol', 'second_symbol']].itertuples():
+        intercept, hedge_ratio = fit_spread_parameters(pair_prices, first_symbol, second_symbol)
+        spread = calculate_pair_spread(pair_prices, first_symbol, second_symbol, intercept, hedge_ratio)
+        spread_mean = spread.mean()
+        spread_std = spread.std()
+        half_life = calculate_spread_half_life(spread, timeframe)
 
-    return pd.Series(params)
+        params.append(
+            {
+                'first_symbol': first_symbol,
+                'second_symbol': second_symbol,
+                'intercept': intercept,
+                'hedge_ratio': hedge_ratio,
+                'spread_mean': spread_mean,
+                'spread_std': spread_std,
+                'half_life_(minutes)': half_life,
+            }
+        )
+
+    return pd.DataFrame(params)
 
 
 # Ornstein-Uhlenbeck formula was used to calculate half-life
