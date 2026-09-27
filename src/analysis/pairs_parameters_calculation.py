@@ -4,7 +4,7 @@ import numpy as np
 from src.data.timeframes import TIME_MINUTES
 
 
-def calculate_pairs_parameters(
+def calculate_pair_parameters(
         pair_prices : pd.DataFrame,
         first_symbol : str,
         second_symbol : str,
@@ -18,6 +18,8 @@ def calculate_pairs_parameters(
     half_life = calculate_spread_half_life(spread, timeframe)
 
     params = {
+        'first_symbol' : first_symbol,
+        'second_symbol' : second_symbol,
         'intercept' : intercept,
         'hedge_ratio' : hedge_ratio,
         'spread_mean' : spread_mean,
@@ -25,7 +27,7 @@ def calculate_pairs_parameters(
         'half_life_(minutes)' : half_life,
     }
 
-    return pd.DataFrame(params)
+    return pd.Series(params)
 
 
 # Ornstein-Uhlenbeck formula was used to calculate half-life
