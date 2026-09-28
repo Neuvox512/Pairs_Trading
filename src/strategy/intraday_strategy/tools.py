@@ -94,7 +94,7 @@ def get_symbols_liquidity(
         window : int = 5
 ) -> pd.DataFrame:
 
-    historical_results = get_historical_symbols_quality(db, timeframe, start_date, end_date)
+    historical_results = get_historical_symbols_quality(db, timeframe, start_date, end_date, window)
 
     return historical_results
 
@@ -112,62 +112,3 @@ def get_strat_dates(
     coint_dates = previous_trading_dates[-coint_days:]
 
     return liquidity_dates, coint_dates
-
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-    from time import perf_counter
-    from src.config import SQLITE_DB_PATH
-
-    db_path = Path(SQLITE_DB_PATH)
-
-    if not db_path.is_file():
-        raise FileNotFoundError(f"Database not found: {db_path}")
-
-    count = []
-    db = SQLiteDB(db_path)
-    for i in range(1,30):
-        try:
-            session_date = date(2026, 3, 31-i)
-            timeframe = "M1"
-
-            liquidity_dates, coint_dates = get_strat_dates(session_date, liquidity_sessions=10, coint_days=1)
-
-            print("Торговая дата:", session_date)
-            print("Таймфрейм:", timeframe)
-            print(
-                "Период оценки ликвидности:",
-                liquidity_dates[0],
-                "—",
-                liquidity_dates[-1],
-            )
-            print("Сессий для ликвидности:", len(liquidity_dates))
-            print("Сессии для коинтеграции:", coint_dates)
-            print("Утреннее подтверждение: первые 90 минут")
-
-            start = perf_counter()
-
-            pairs_parameters = prepare_trading_day(
-                db=db,
-                session_date=session_date,
-                timeframe=timeframe,
-                min_coverage_quantile=0.75,
-                min_tick_volume_quantile=0.75,
-                max_spread_quantile=0.25,
-            )
-
-            print("\nИтоговых пар:", len(pairs_parameters))
-
-            if pairs_parameters.empty:
-                print("На выбранную дату подходящих пар нет.")
-            else:
-                print(pairs_parameters.to_string(index=False))
-                count.append(pairs_parameters)
-
-            print(f"\nВремя выполнения: {perf_counter() - start:.2f} секунд")
-        except:
-            print (f'Выходной в {session_date}')
-
-    print (len(count))
-    print(pd.concat(count))

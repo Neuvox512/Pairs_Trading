@@ -1,11 +1,10 @@
 from datetime import date
 import pandas as pd
-from src.strategy.intraday_strategy import (
+from src.strategy.intraday_strategy.tools import (
     get_strat_dates,
     confirm_local_candidate_pairs,
     get_local_prices,
-    get_pairs_parameters,
-    prepare_trading_day)
+    get_pairs_parameters)
 
 
 def test_get_pairs_parameters(sim_db) -> None:

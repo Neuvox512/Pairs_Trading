@@ -16,19 +16,22 @@ from src.strategy.intraday_strategy.tools import (
 
 
 
-def get_tradable_prices(
+def get_tradable_data(
         db: SQLiteDB,
         pairs_parameters: pd.DataFrame,
         session_date: date,
         timeframe: str,
-        opening_minutes: int,
+        opening_minutes: int
 ) -> pd.DataFrame:
+
+    if pairs_parameters.empty:
+        return pd.DataFrame()
 
     symbols = list(set(pairs_parameters['first_symbol'].tolist() + pairs_parameters['second_symbol'].tolist()))
 
     all_session_prices = get_session_prices(db, symbols, timeframe, session_date)
-    local_session_prices = get_local_prices(db, symbols, session_date, timeframe, opening_minutes)
-    tradable_session_prices = all_session_prices[all_session_prices.index > local_session_prices]
+    local_session = get_local_session_bar_range(session_date, timeframe, opening_minutes)
+    tradable_session_prices = all_session_prices[all_session_prices.index > local_session]
 
     if tradable_session_prices.empty:
         return pd.DataFrame()
@@ -39,7 +42,6 @@ def get_tradable_prices(
             tradable_session_prices,
             pair.first_symbol,
             pair.second_symbol,
-            timeframe,
             pair.intercept,
             pair.hedge_ratio
         )
@@ -67,6 +69,8 @@ def prepare_trading_day(
         db : SQLiteDB,
         session_date : date,
         timeframe : str,
+        liquidity_sessions: int = 20,
+        coint_sessions: int = 2,
         min_coverage_quantile : float = 0.9,
         min_tick_volume_quantile : float = 0.9,
         max_spread_quantile : float = 0.1,
@@ -75,7 +79,7 @@ def prepare_trading_day(
     if get_full_session_bar_range(session_date, timeframe) is None:
         raise ValueError(f'No session in date {session_date}')
 
-    liquidity_dates, coint_dates = get_strat_dates(session_date)
+    liquidity_dates, coint_dates = get_strat_dates(session_date, liquidity_sessions, coint_sessions)
     symbols_liquidity = get_symbols_liquidity(db, timeframe, liquidity_dates[0], liquidity_dates[-1])
     filters = get_liquidity_params_quantiles(symbols_liquidity)
     filtered_symbols = filter_symbols_by_liquidity(
@@ -96,3 +100,61 @@ def prepare_trading_day(
     confirmed_pairs = confirm_local_candidate_pairs(db, global_candidate_pairs, timeframe, session_date)
 
     return get_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
+
+
+if __name__ == "__main__":
+    from pathlib import Path
+    from time import perf_counter
+    from src.config import SQLITE_DB_PATH
+
+    db_path = Path(SQLITE_DB_PATH)
+
+    if not db_path.is_file():
+        raise FileNotFoundError(f"Database not found: {db_path}")
+
+    count = []
+    db = SQLiteDB(db_path)
+    for i in range(1,30):
+        try:
+            session_date = date(2026, 2, 29-i)
+            timeframe = "M1"
+
+            liquidity_dates, coint_dates = get_strat_dates(session_date, liquidity_sessions=10, coint_days=1)
+
+            print("Торговая дата:", session_date)
+            print("Таймфрейм:", timeframe)
+            print(
+                "Период оценки ликвидности:",
+                liquidity_dates[0],
+                "—",
+                liquidity_dates[-1],
+            )
+            print("Сессий для ликвидности:", len(liquidity_dates))
+            print("Сессии для коинтеграции:", coint_dates)
+            print("Утреннее подтверждение: первые 90 минут")
+
+            start = perf_counter()
+
+            pairs_parameters = prepare_trading_day(
+                db=db,
+                session_date=session_date,
+                timeframe=timeframe,
+                min_coverage_quantile=0.75,
+                min_tick_volume_quantile=0.75,
+                max_spread_quantile=0.25,
+            )
+
+            print("\nИтоговых пар:", len(pairs_parameters))
+
+            if pairs_parameters.empty:
+                print("На выбранную дату подходящих пар нет.")
+            else:
+                print(pairs_parameters.to_string(index=False))
+                count.append(pairs_parameters)
+
+            print(f"\nВремя выполнения: {perf_counter() - start:.2f} секунд")
+        except:
+            print (f'Выходной в {session_date}')
+
+    print (len(count))
+    print(pd.concat(count))

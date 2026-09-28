@@ -71,10 +71,12 @@ def test_calculate_pair_spread_z_score(sim_close_prices) -> None:
 
     intercept, hedge_ratio = fit_spread_parameters(sim_close_prices.iloc[:-10], first_symbol, second_symbol)
     global_spread = calculate_pair_spread(sim_close_prices.iloc[:-10], first_symbol, second_symbol, intercept, hedge_ratio)
+    global_mean = global_spread.mean()
+    global_std = global_spread.std()
 
     local_spread = calculate_pair_spread(sim_close_prices.iloc[-10:], first_symbol, second_symbol, intercept, hedge_ratio)
 
-    z_score = calculate_pair_spread_z_score(local_spread, global_spread)
+    z_score = calculate_pair_spread_z_score(local_spread, global_mean, global_std)
 
     assert z_score.values == pytest.approx(
         [0.44357725, -0.06978711, 0.86295494, -0.22807929, 0.32078286, 1.72974753,
