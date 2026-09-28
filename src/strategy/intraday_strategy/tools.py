@@ -2,50 +2,12 @@ from datetime import date
 import pandas as pd
 from src.analysis.cointegration import screen_local_pairs
 from src.analysis.liquidity_filtration import (
-    get_historical_symbols_quality,
-    filter_symbols_by_liquidity,
-    get_liquidity_params_quantiles,
-    get_symbols_liquidity_quality)
+    get_historical_symbols_quality)
 from src.data.sqlite_db import SQLiteDB
 from src.analysis.pairs_selection import historical_screening, select_candidate_pairs
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
 from src.analysis.pairs_parameters_calculation import calculate_pairs_parameters
-from src.data.market_session import get_session_prices, get_full_session_bar_range
-
-
-def prepare_trading_day(
-        db : SQLiteDB,
-        session_date : date,
-        timeframe : str,
-        min_coverage_quantile : float = 0.9,
-        min_tick_volume_quantile : float = 0.9,
-        max_spread_quantile : float = 0.1,
-) -> pd.DataFrame:
-
-    if get_full_session_bar_range(session_date, timeframe) is None:
-        raise ValueError(f'No session in date {session_date}')
-
-    liquidity_dates, coint_dates = get_strat_dates(session_date)
-    symbols_liquidity = get_symbols_liquidity(db, timeframe, liquidity_dates[0], liquidity_dates[-1])
-    filters = get_liquidity_params_quantiles(symbols_liquidity)
-    filtered_symbols = filter_symbols_by_liquidity(
-        symbols_liquidity,
-        min_coverage_pct=filters.loc[min_coverage_quantile, 'coverage_pct'],
-        min_tick_volume=filters.loc[min_tick_volume_quantile, 'avg_tick_volume'],
-        max_spread_pct=filters.loc[max_spread_quantile, 'avg_spread_pct']
-    )
-
-    if len(filtered_symbols) < 2:
-        return pd.DataFrame()
-
-    global_candidate_pairs = get_global_candidate_pairs(db, filtered_symbols, timeframe, coint_dates)
-
-    if global_candidate_pairs.empty:
-        return pd.DataFrame()
-
-    confirmed_pairs = confirm_local_candidate_pairs(db, global_candidate_pairs, timeframe, session_date)
-
-    return get_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
+from src.data.market_session import get_session_prices
 
 
 def get_pairs_parameters(
@@ -134,7 +96,7 @@ def get_symbols_liquidity(
 
     historical_results = get_historical_symbols_quality(db, timeframe, start_date, end_date)
 
-    return get_symbols_liquidity_quality(historical_results, window=window)
+    return historical_results
 
 
 def get_strat_dates(
@@ -167,10 +129,10 @@ if __name__ == "__main__":
     db = SQLiteDB(db_path)
     for i in range(1,30):
         try:
-            session_date = date(2026, 4, 31-i)
+            session_date = date(2026, 3, 31-i)
             timeframe = "M1"
 
-            liquidity_dates, coint_dates = get_strat_dates(session_date)
+            liquidity_dates, coint_dates = get_strat_dates(session_date, liquidity_sessions=10, coint_days=1)
 
             print("Торговая дата:", session_date)
             print("Таймфрейм:", timeframe)
@@ -190,8 +152,8 @@ if __name__ == "__main__":
                 db=db,
                 session_date=session_date,
                 timeframe=timeframe,
-                min_coverage_quantile=0.9,
-                min_tick_volume_quantile=0.9,
+                min_coverage_quantile=0.75,
+                min_tick_volume_quantile=0.75,
                 max_spread_quantile=0.25,
             )
 
@@ -201,11 +163,11 @@ if __name__ == "__main__":
                 print("На выбранную дату подходящих пар нет.")
             else:
                 print(pairs_parameters.to_string(index=False))
-                count.append(len(pairs_parameters))
+                count.append(pairs_parameters)
 
             print(f"\nВремя выполнения: {perf_counter() - start:.2f} секунд")
         except:
             print (f'Выходной в {session_date}')
 
-    print (count)
     print (len(count))
+    print(pd.concat(count))

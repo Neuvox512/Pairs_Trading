@@ -35,6 +35,7 @@ def get_liquidity_params_quantiles(symbols_liquidity_quality : pd.DataFrame) -> 
 
     return quantiles
 
+
 def show_liquidity_params_distribution(symbols_liquidity_quality : pd.DataFrame) -> None:
     fig, ax = plt.subplots(1,3, figsize = (12,7))
     ax[0].hist(symbols_liquidity_quality['avg_tick_volume'], bins = 50)
@@ -49,26 +50,14 @@ def show_liquidity_params_distribution(symbols_liquidity_quality : pd.DataFrame)
     plt.show()
 
 
-def get_symbols_liquidity_quality(daily_quality : pd.DataFrame, window : int = 5) -> pd.DataFrame:
-    rolling_quality = (
-        daily_quality
-        .sort_values(by=['symbol', 'session_date'])
-        .set_index('session_date')
-        .groupby('symbol')
-        .rolling(window =window)
-        .agg(
-            avg_tick_volume = ('median_tick_volume', 'mean'),
-            coverage_pct = ('coverage_pct', 'mean'),
-            avg_spread_pct = ('median_spread_pct', 'mean')
-        ).reset_index()
-    )
-    latest_session_date = rolling_quality['session_date'].max()
-    latest_quality = rolling_quality[rolling_quality['session_date'] == latest_session_date].reset_index(drop = True)
+def get_historical_symbols_quality(
+        db : SQLiteDB,
+        timeframe : str,
+        start_date : date,
+        end_date : date,
+        window : int = 5
+) -> None | pd.DataFrame:
 
-    return latest_quality
-
-
-def get_historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : date, end_date : date) -> None | pd.DataFrame:
     daily_quality_results = []
     trading_dates = get_trading_dates(start_date, end_date)
 
@@ -106,4 +95,19 @@ def get_historical_symbols_quality(db : SQLiteDB, timeframe : str, start_date : 
     complete_symbols = session_counts[session_counts['session_count'] == len(trading_dates)]
     daily_quality = daily_quality[daily_quality['symbol'].isin(complete_symbols.index)]
 
-    return daily_quality
+    rolling_quality = (
+        daily_quality
+        .sort_values(by=['symbol', 'session_date'])
+        .set_index('session_date')
+        .groupby('symbol')
+        .rolling(window =window)
+        .agg(
+            avg_tick_volume = ('median_tick_volume', 'mean'),
+            coverage_pct = ('coverage_pct', 'mean'),
+            avg_spread_pct = ('median_spread_pct', 'mean')
+        ).reset_index()
+    )
+    latest_session_date = rolling_quality['session_date'].max()
+    latest_quality = rolling_quality[rolling_quality['session_date'] == latest_session_date].reset_index(drop = True)
+
+    return latest_quality
