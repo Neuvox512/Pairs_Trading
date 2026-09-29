@@ -58,7 +58,7 @@ def simulate_trades(
                 direction = 1
             else: continue
 
-            entry_time = current_bar.time
+            entry_time = current_time
             entry_price_1 = current_bar.symbol_1_close
             entry_price_2 = current_bar.symbol_2_close
             continue
@@ -77,7 +77,7 @@ def simulate_trades(
 
         else: continue
 
-        exit_time = current_bar.time
+        exit_time = current_time
         exit_price_1 = current_bar.symbol_1_close
         exit_price_2 = current_bar.symbol_2_close
 
