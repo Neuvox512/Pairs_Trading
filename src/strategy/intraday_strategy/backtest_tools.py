@@ -13,24 +13,27 @@ from src.strategy.intraday_strategy.tools import (
     get_global_candidate_pairs,
     confirm_local_candidate_pairs,
     get_pairs_parameters)
+from matplotlib import pyplot as plt
 
 
 def simulate_trades(
         tradable_pairs_data : pd.DataFrame,
         timeframe : str,
         half_time_minutes : float,
+        half_time_multiplier: float = 2.0,
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
-        half_time_multiplier : float = 2.0
+        acceptable_z_score : float = 4.5,
 ) -> pd.DataFrame:
 
     if tradable_pairs_data.empty:
         return pd.DataFrame()
     if half_time_minutes <= 0:
         raise ValueError (f'Half_time should be positive')
-    if not 0 <= exit_z_score < entry_z_score:
-        raise ValueError (f'Exit-Z-score should be between 0 and Entry-Z-score')
-    if half_time_multiplier < 0:
+    if not 0 <= exit_z_score < entry_z_score <= acceptable_z_score:
+        raise ValueError (f'Exit-Z-score should be between 0 and Entry-Z-score'\
+                          'Acceptable-Z-score should be greater than Entry-Z-score')
+    if half_time_multiplier <= 0:
         raise ValueError (f'Holding-multiplier should be positive')
 
     prices = tradable_pairs_data.sort_values('time').reset_index(drop=True)
@@ -52,6 +55,9 @@ def simulate_trades(
             if i == last_bar:
                 continue
 
+            if abs(signal_z_score) > acceptable_z_score:
+                continue
+
             if signal_z_score > entry_z_score:
                 direction = -1
             elif signal_z_score < -entry_z_score:
@@ -65,7 +71,14 @@ def simulate_trades(
 
         time_passed = (current_time - entry_time).total_seconds() / 60
 
-        if i == last_bar:
+        if (
+            (direction == 1 and signal_z_score < -acceptable_z_score)
+            or
+            (direction == -1 and signal_z_score > entry_z_score)
+        ):
+            exit_reason = 'max_accepted_z_score'
+
+        elif i == last_bar:
             exit_reason = 'session_end'
 
         elif time_passed >= stop_loss_time:
@@ -101,6 +114,9 @@ def simulate_trades(
         direction = 0
         entry_bar = None
         entry_time = None
+
+        if exit_reason == 'max_accepted_z_score':
+            break
 
     return pd.DataFrame(trades)
 
@@ -164,6 +180,7 @@ def prepare_trading_day(
         min_tick_volume_quantile : float = 0.9,
         max_spread_quantile : float = 0.1,
         opening_minutes: int = 90,
+        fdr_level : float = 0.1
 ) -> pd.DataFrame:
 
     if get_full_session_bar_range(session_date, timeframe) is None:
@@ -187,7 +204,8 @@ def prepare_trading_day(
     if global_candidate_pairs.empty:
         return pd.DataFrame()
 
-    confirmed_pairs = confirm_local_candidate_pairs(db, global_candidate_pairs, timeframe, session_date, opening_minutes)
+    confirmed_pairs = confirm_local_candidate_pairs(
+        db, global_candidate_pairs, timeframe, session_date, opening_minutes, fdr_level)
 
     return get_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
 
@@ -204,7 +222,8 @@ if __name__ == "__main__":
 
     count = []
     db = SQLiteDB(db_path)
-    session_date = date(2026, 8, 27)
+
+    session_date = date(2026, 8, 25)
     timeframe = "M1"
     pairs_parameters = prepare_trading_day(
                 db=db,
@@ -215,13 +234,17 @@ if __name__ == "__main__":
                 min_coverage_quantile=0.75,
                 min_tick_volume_quantile=0.75,
                 max_spread_quantile=0.25,
+                fdr_level=0.05
             )
     tradable_data = get_tradable_data(db, pairs_parameters, session_date, timeframe, 90)
-    print(pairs_parameters)
-    tradable_pair = tradable_data[tradable_data['symbol_1'].eq('AVGO.US') & tradable_data['symbol_2'].eq('IUSG.US')]
-    raw = tradable_pair.iloc[0]
-    trades = simulate_trades(tradable_pair,'M1',20, 2, 0.5, 2)
-    print(trades)
+    print(tradable_data)
+    for row in pairs_parameters.itertuples():
+        tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
+        plt.plot(tradable_pair.time, tradable_pair.z_score)
+        plt.show()
+    # trades = simulate_trades(tradable_pair,'M1',45, 2,2, 0.5)
+    # print(trades)
+
 
     # for i in range(1,30):
     #     try:
