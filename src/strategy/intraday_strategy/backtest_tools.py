@@ -72,9 +72,9 @@ def simulate_trades(
         time_passed = (current_time - entry_time).total_seconds() / 60
 
         if (
-            (direction == 1 and signal_z_score < -acceptable_z_score)
+            (direction == 1 and signal_z_score <= -acceptable_z_score)
             or
-            (direction == -1 and signal_z_score > acceptable_z_score)
+            (direction == -1 and signal_z_score >= acceptable_z_score)
         ):
             exit_reason = 'max_accepted_z_score'
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     count = []
     db = SQLiteDB(db_path)
 
-    session_date = date(2026, 8, 24)
+    session_date = date(2026, 8, 18)
     timeframe = "M1"
     pairs_parameters = prepare_trading_day(
         db=db, session_date=session_date,
