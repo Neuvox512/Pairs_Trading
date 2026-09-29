@@ -26,18 +26,18 @@ def simulate_trades(
         return pd.DataFrame()
     if half_time_minutes <= 0:
         raise ValueError (f'Half_time should be positive')
-    if not 0 <= exit_z_score <= entry_z_score:
+    if not 0 <= exit_z_score < entry_z_score:
         raise ValueError (f'Exit-Z-score should be between 0 and Entry-Z-score')
     if half_time_multiplier < 0:
         raise ValueError (f'Holding-multiplier should be positive')
 
     prices = tradable_pairs_data.sort_values('time').reset_index(drop=True)
     stop_loss_time = half_time_minutes * half_time_multiplier
-    last_bar = prices.iloc[-1]
+    last_bar = len(prices) - 1
 
     direction = 0
     trades = []
-    entry_time = None
+    entry_time = 0
 
     for i in range(1, len(prices)):
         current_bar = prices.iloc[i]
@@ -45,39 +45,35 @@ def simulate_trades(
         current_time = current_bar.time
         time_passed = (current_time - entry_time).total_seconds() / 60
 
-        if current_bar == last_bar:
+        if i == last_bar:
             exit_reason = 'session_end'
-            exit_time = current_bar.at_time
-            break
 
         elif direction == 0:
 
             if current_z_score > entry_z_score:
                 direction = -1
-                entry_time = current_bar.time
-                entry_price_1 = current_bar.symbol_1_close
-                entry_price_2 = current_bar.symbol_2_close
             elif current_z_score < -entry_z_score:
                 direction = 1
-                entry_time = current_bar.time
-                entry_price_1 = current_bar.symbol_1_close
-                entry_price_2 = current_bar.symbol_2_close
             else: continue
+
+            entry_time = current_bar.time
+            entry_price_1 = current_bar.symbol_1_close
+            entry_price_2 = current_bar.symbol_2_close
+            continue
 
         elif time_passed >= stop_loss_time:
             exit_reason = 'time_stop_loss'
-            exit_time = current_bar.time
-            exit_price_1 = current_bar.symbol_1_close
-            exit_price_2 = current_bar.symbol_2_close
 
         elif (direction == 1 and current_z_score > -exit_z_score
               or direction == -1 and current_z_score < exit_z_score):
             exit_reason = 'mean revertion'
-            exit_time = current_bar.time
-            exit_price_1 = current_bar.symbol_1_close
-            exit_price_2 = current_bar.symbol_2_close
 
         else: continue
+
+        exit_time = current_bar.time
+        exit_price_1 = current_bar.symbol_1_close
+        exit_price_2 = current_bar.symbol_2_close
+
 
         trades.append(
             {
@@ -85,7 +81,7 @@ def simulate_trades(
                 'symbol_2' : current_bar.symbol_2,
                 'direction' : direction,
                 'entry_time' : entry_time,
-                'exit_time' : current_time,
+                'exit_time' : exit_time,
                 'entry_price_1' : entry_price_1,
                 'exit_price_1' : exit_price_1,
                 'entry_price_2' : entry_price_2,
@@ -97,9 +93,9 @@ def simulate_trades(
 
         direction = 0
         entry_bar = None
-        entry_time = None
+        entry_time = 0
 
-        return pd.DataFrame(trades)
+    return pd.DataFrame(trades)
 
 
 def get_tradable_data(
