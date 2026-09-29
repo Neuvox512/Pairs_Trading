@@ -17,8 +17,8 @@ from src.strategy.intraday_strategy.tools import (
 
 def simulate_trades(
         tradable_pairs_data : pd.DataFrame,
-        half_time_minutes : float,
         timeframe : str,
+        half_time_minutes : float,
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
         half_time_multiplier : float = 2.0
@@ -45,7 +45,8 @@ def simulate_trades(
         signal_bar = prices.iloc[i-1]
         signal_z_score = signal_bar.z_score
         current_bar = prices.iloc[i]
-        current_time = current_bar.time + pd.Timedelta(minutes = TIME_FREQUENCIES[timeframe])
+        # open time + timeframes time = close time
+        current_time = current_bar.time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
 
         if direction == 0:
             if i == last_bar:
@@ -219,7 +220,7 @@ if __name__ == "__main__":
     print(pairs_parameters)
     tradable_pair = tradable_data[tradable_data['symbol_1'].eq('AVGO.US') & tradable_data['symbol_2'].eq('IUSG.US')]
     raw = tradable_pair.iloc[0]
-    trades = simulate_trades(tradable_pair, 'M1',20, 2, 0.5, 2)
+    trades = simulate_trades(tradable_pair,'M1',20, 2, 0.5, 2)
     print(trades)
 
     # for i in range(1,30):
