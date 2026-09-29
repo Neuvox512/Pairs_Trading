@@ -6,7 +6,7 @@ from src.analysis.liquidity_filtration import (
 from src.data.sqlite_db import SQLiteDB
 from src.analysis.pairs_selection import historical_screening, select_candidate_pairs
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
-from src.analysis.pairs_parameters_calculation import calculate_pairs_parameters
+from src.analysis.pairs_parameters_calculation import calculate_global_pairs_parameters
 from src.data.market_session import get_session_prices
 
 
@@ -29,7 +29,7 @@ def get_pairs_parameters(
 
     historical_prices = pd.concat(history)
 
-    parameters = calculate_pairs_parameters(historical_prices, confirmed_pairs, timeframe)
+    parameters = calculate_global_pairs_parameters(historical_prices, confirmed_pairs, timeframe)
 
     return parameters
 

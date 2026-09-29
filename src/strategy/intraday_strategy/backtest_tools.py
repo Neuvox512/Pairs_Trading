@@ -19,11 +19,13 @@ from matplotlib import pyplot as plt
 def simulate_trades(
         tradable_pairs_data : pd.DataFrame,
         timeframe : str,
+        hedge_ratio: float,
         half_time_minutes : float,
         half_time_multiplier: float = 2.0,
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
         acceptable_z_score : float = 4.5,
+        base_quantity: float = 1.0
 ) -> pd.DataFrame:
 
     if tradable_pairs_data.empty:
@@ -67,6 +69,9 @@ def simulate_trades(
             entry_time = current_time
             entry_price_1 = current_bar.symbol_1_close
             entry_price_2 = current_bar.symbol_2_close
+            quantity_1 = direction * base_quantity
+            quantity_2 = -quantity_1 * hedge_ratio
+
             continue
 
         time_passed = (current_time - entry_time).total_seconds() / 60
@@ -96,6 +101,9 @@ def simulate_trades(
         exit_time = current_time
         exit_price_1 = current_bar.symbol_1_close
         exit_price_2 = current_bar.symbol_2_close
+        gross_pnl_1 = quantity_1 * (exit_price_1 - entry_price_1)
+        gross_pnl_2 = quantity_2 * (exit_price_2 - entry_price_2)
+        gross_pnl = gross_pnl_1 + gross_pnl_2
 
 
         trades.append(
@@ -110,6 +118,9 @@ def simulate_trades(
                 'entry_price_2' : entry_price_2,
                 'exit_price_2' : exit_price_2,
                 'holding_time_(min)' : time_passed,
+                'gross_pnl_1' : gross_pnl_1,
+                'gross_pnl_2' : gross_pnl_2,
+                'gross_pnl' : gross_pnl,
                 'exit_reason' : exit_reason
             }
         )
@@ -184,7 +195,7 @@ def prepare_trading_day(
         max_spread_quantile : float = 0.1,
         opening_minutes: int = 90,
         global_fdr_level: float = 0.1,
-        local_fdr_level : float = 0.05
+        local_fdr_level : float = 0.05,
 ) -> pd.DataFrame:
 
     if get_full_session_bar_range(session_date, timeframe) is None:
@@ -226,27 +237,37 @@ if __name__ == "__main__":
 
     count = []
     db = SQLiteDB(db_path)
-
-    session_date = date(2026, 8, 18)
-    timeframe = "M1"
-    pairs_parameters = prepare_trading_day(
-        db=db, session_date=session_date,
-        timeframe=timeframe,
-        liquidity_sessions=10,
-        coint_sessions=1,
-        min_coverage_quantile=0.75,
-        min_tick_volume_quantile=0.75,
-        max_spread_quantile=0.25,
-        global_fdr_level= 0.05,
-        local_fdr_level=0.05)
-    tradable_data = get_tradable_data(db, pairs_parameters, session_date, timeframe, 90)
-    print(tradable_data)
-    for row in pairs_parameters.itertuples():
-        tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
-        plt.plot(tradable_pair.time, tradable_pair.z_score)
-        plt.show()
-    # trades = simulate_trades(tradable_pair,'M1',45, 2,2, 0.5)
-    # print(trades)
+    for i in range(1,29):
+        session_date = date(2026, 8, 29-i)
+        timeframe = "M1"
+        pairs_parameters = prepare_trading_day(
+            db=db, session_date=session_date,
+            timeframe=timeframe,
+            liquidity_sessions=10,
+            coint_sessions=1,
+            min_coverage_quantile=0.75,
+            min_tick_volume_quantile=0.75,
+            max_spread_quantile=0.25,
+            global_fdr_level= 0.05,
+            local_fdr_level=0.05)
+        tradable_data = get_tradable_data(db, pairs_parameters, session_date, timeframe, 90)
+        # print(tradable_data)
+        results = []
+        for row in pairs_parameters.itertuples():
+            tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
+            # plt.plot(tradable_pair.time, tradable_pair.z_score)
+            # plt.show()
+            trades = simulate_trades(
+                tradable_pair,
+                'M1',
+                row.hedge_ratio,
+                20,
+                2,1.5, 0.6, 3, 1)
+            if not trades.empty:
+                sum_pnl = trades['gross_pnl'].sum()
+                results.append(sum_pnl)
+        total_pnl = sum(results)
+        print(total_pnl)
 
 
     # for i in range(1,30):
