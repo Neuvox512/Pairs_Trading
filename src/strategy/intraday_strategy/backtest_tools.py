@@ -30,7 +30,7 @@ def simulate_trades(
         return pd.DataFrame()
     if half_time_minutes <= 0:
         raise ValueError (f'Half_time should be positive')
-    if not 0 <= exit_z_score < entry_z_score <= acceptable_z_score:
+    if not 0 <= exit_z_score < entry_z_score < acceptable_z_score:
         raise ValueError (f'Exit-Z-score should be between 0 and Entry-Z-score'\
                           'Acceptable-Z-score should be greater than Entry-Z-score')
     if half_time_multiplier <= 0:
@@ -55,7 +55,7 @@ def simulate_trades(
             if i == last_bar:
                 continue
 
-            if abs(signal_z_score) > acceptable_z_score:
+            if abs(signal_z_score) >= acceptable_z_score:
                 continue
 
             if signal_z_score > entry_z_score:
@@ -74,7 +74,7 @@ def simulate_trades(
         if (
             (direction == 1 and signal_z_score < -acceptable_z_score)
             or
-            (direction == -1 and signal_z_score > entry_z_score)
+            (direction == -1 and signal_z_score > acceptable_z_score)
         ):
             exit_reason = 'max_accepted_z_score'
 
@@ -84,8 +84,11 @@ def simulate_trades(
         elif time_passed >= stop_loss_time:
             exit_reason = 'time_stop_loss'
 
-        elif (direction == 1 and signal_z_score > -exit_z_score
-              or direction == -1 and signal_z_score < exit_z_score):
+        elif (
+                (direction == 1 and signal_z_score > -exit_z_score)
+                or
+                (direction == -1 and signal_z_score < exit_z_score)
+        ):
             exit_reason = 'mean revertion'
 
         else: continue
@@ -180,7 +183,8 @@ def prepare_trading_day(
         min_tick_volume_quantile : float = 0.9,
         max_spread_quantile : float = 0.1,
         opening_minutes: int = 90,
-        fdr_level : float = 0.1
+        global_fdr_level: float = 0.1,
+        local_fdr_level : float = 0.05
 ) -> pd.DataFrame:
 
     if get_full_session_bar_range(session_date, timeframe) is None:
@@ -199,13 +203,13 @@ def prepare_trading_day(
     if len(filtered_symbols) < 2:
         return pd.DataFrame()
 
-    global_candidate_pairs = get_global_candidate_pairs(db, filtered_symbols, timeframe, coint_dates)
+    global_candidate_pairs = get_global_candidate_pairs(db, filtered_symbols, timeframe, coint_dates, global_fdr_level)
 
     if global_candidate_pairs.empty:
         return pd.DataFrame()
 
     confirmed_pairs = confirm_local_candidate_pairs(
-        db, global_candidate_pairs, timeframe, session_date, opening_minutes, fdr_level)
+        db, global_candidate_pairs, timeframe, session_date, opening_minutes, local_fdr_level)
 
     return get_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
 
@@ -223,19 +227,18 @@ if __name__ == "__main__":
     count = []
     db = SQLiteDB(db_path)
 
-    session_date = date(2026, 8, 25)
+    session_date = date(2026, 8, 24)
     timeframe = "M1"
     pairs_parameters = prepare_trading_day(
-                db=db,
-                session_date=session_date,
-                timeframe=timeframe,
-                liquidity_sessions=10,
-                coint_sessions=1,
-                min_coverage_quantile=0.75,
-                min_tick_volume_quantile=0.75,
-                max_spread_quantile=0.25,
-                fdr_level=0.05
-            )
+        db=db, session_date=session_date,
+        timeframe=timeframe,
+        liquidity_sessions=10,
+        coint_sessions=1,
+        min_coverage_quantile=0.75,
+        min_tick_volume_quantile=0.75,
+        max_spread_quantile=0.25,
+        global_fdr_level= 0.05,
+        local_fdr_level=0.05)
     tradable_data = get_tradable_data(db, pairs_parameters, session_date, timeframe, 90)
     print(tradable_data)
     for row in pairs_parameters.itertuples():

@@ -75,10 +75,11 @@ def get_global_candidate_pairs(
         db : SQLiteDB,
         symbols : list[str],
         timeframe : str,
-        coint_dates : list[date]
+        coint_dates : list[date],
+        global_fdr_level : float = 0.1
 ) -> pd.DataFrame:
 
-    historical_results = historical_screening(db, symbols, timeframe, coint_dates[0], coint_dates[-1])
+    historical_results = historical_screening(db, symbols, timeframe, coint_dates[0], coint_dates[-1], global_fdr_level)
 
     if historical_results.empty:
         return pd.DataFrame()
