@@ -43,10 +43,14 @@ def simulate_trades(
     prices = tradable_pairs_data.sort_values('time').reset_index(drop=True)
     symbol_1 = prices['symbol_1'].iloc[0]
     symbol_2 = prices['symbol_2'].iloc[0]
-    symbol_1_info = symbols_info[symbols_info['symbol'] == symbol_1]
-    symbol_2_info = symbols_info[symbols_info['symbol'] == symbol_2]
+    symbol_1_info = symbols_info[symbols_info['symbol'] == symbol_1].iloc[0]
+    symbol_2_info = symbols_info[symbols_info['symbol'] == symbol_2].iloc[0]
+    contract_size_1 = symbol_1_info.contract_size
+    contract_size_2 = symbol_2_info.contract_size
     lot_1 = standartize_lot(base_lot, symbol_1_info)
-    lot_2 = standartize_lot(lot_1 * hedge_ratio, symbol_2_info)
+    if lot_1 is None:
+        return pd.DataFrame()
+    lot_2 = standartize_lot(lot_1 * hedge_ratio * contract_size_1/contract_size_2, symbol_2_info)
     stop_loss_time = half_time_minutes * half_time_multiplier
     last_bar = len(prices) - 1
 
