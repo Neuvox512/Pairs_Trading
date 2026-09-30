@@ -1,6 +1,6 @@
 from datetime import date
 import pandas as pd
-from src.strategy.intraday_strategy.tools import (
+from src.strategy.intraday_strategy.general_tools import (
     get_strat_dates,
     confirm_local_candidate_pairs,
     get_local_prices,

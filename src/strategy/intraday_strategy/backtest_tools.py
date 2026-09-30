@@ -7,14 +7,14 @@ from src.analysis.liquidity_filtration import (
 from src.analysis.pairs_parameters_calculation import calculate_pair_spread, calculate_pair_spread_z_score
 from src.data.sqlite_db import SQLiteDB
 from src.data.market_session import get_full_session_bar_range, get_local_session_bar_range, get_session_prices
-from src.strategy.intraday_strategy.tools import (
+from src.strategy.intraday_strategy.general_tools import (
     get_symbols_liquidity,
     get_strat_dates,
     get_global_candidate_pairs,
     confirm_local_candidate_pairs,
     get_pairs_parameters,
     standartize_lot)
-from _decimal import Decimal
+from decimal import Decimal
 from matplotlib import pyplot as plt
 
 
@@ -52,7 +52,7 @@ def simulate_trades(
     if lot_1 is None:
         return pd.DataFrame()
     lot_2 = standartize_lot(
-        Decimal(str(base_lot))
+        Decimal(str(lot_1))
         * abs(Decimal(str(hedge_ratio)))
         * Decimal(str(contract_size_1))/Decimal(str(contract_size_2)),
         symbol_2_info
@@ -287,8 +287,14 @@ if __name__ == "__main__":
                 tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
                 # plt.plot(tradable_pair.time, tradable_pair.z_score)
                 # plt.show()
-                trades = simulate_trades(tradable_pair, 'M1', row.hedge_ratio, row.half_life_minutes, symbols_info, 4,
-                                         2, 0.5, 3, 1)
+                trades = simulate_trades(
+                    tradable_pair,
+                    'M1',
+                    row.hedge_ratio,
+                    row.half_life_minutes,
+                    symbols_info,
+                    3,
+                    2, 0.5, 3.5, 1)
                 if not trades.empty:
                     sum_pnl = trades['gross_pnl'].sum()
                     results.append(sum_pnl)
