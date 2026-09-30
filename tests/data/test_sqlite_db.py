@@ -36,7 +36,11 @@ def test_save_symbols(tmp_path) -> None:
     instruments = pd.DataFrame(
         {
         "symbol": ["AAPL.US", "MSFT.US"],
-        "point": [0.01, 0.01]
+        "point": [0.01, 0.01],
+        "contract_size": [1.0, 1.0],
+        "volume_min": [1.0, 1.0],
+        "volume_max": [1000.0, 1000.0],
+        "volume_step": [1.0, 1.0],
         }
     )
 

@@ -21,11 +21,12 @@ def simulate_trades(
         timeframe : str,
         hedge_ratio: float,
         half_time_minutes : float,
+        symbols_info : pd.DataFrame,
         half_time_multiplier: float = 2.0,
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
         acceptable_z_score : float = 4.5,
-        base_quantity: float = 1.0
+        lot : float = 1.0
 ) -> pd.DataFrame:
 
     if tradable_pairs_data.empty:
@@ -39,6 +40,12 @@ def simulate_trades(
         raise ValueError (f'Holding-multiplier should be positive')
 
     prices = tradable_pairs_data.sort_values('time').reset_index(drop=True)
+    symbol_1 = prices['symbol_1'].iloc[0]
+    symbol_2 = prices['symbol_2'].iloc[0]
+    symbol_1_info = symbols_info[symbols_info['symbol'] == symbol_1]
+    symbol_2_info = symbols_info[symbols_info['symbol'] == symbol_2]
+    contract_size_1 = symbol_1_info.contract_size
+    contract_size_2 = symbol_2_info.contract_size
     stop_loss_time = half_time_minutes * half_time_multiplier
     last_bar = len(prices) - 1
 
@@ -69,8 +76,8 @@ def simulate_trades(
             entry_time = current_time
             entry_price_1 = current_bar.symbol_1_close
             entry_price_2 = current_bar.symbol_2_close
-            quantity_1 = direction * base_quantity
-            quantity_2 = -quantity_1 * hedge_ratio
+            quantity_1 = direction * lot * contract_size_1
+            quantity_2 = -direction * lot * hedge_ratio * contract_size_2
 
             continue
 
@@ -239,11 +246,12 @@ if __name__ == "__main__":
 
     count = []
     db = SQLiteDB(db_path)
+    symbols_info = db.load_symbols()
 
     results = []
     for i in range(1,29):
         try:
-            session_date = date(2026, 8, 30-i)
+            session_date = date(2026, 6, 30-i)
             timeframe = "M1"
             pairs_parameters = prepare_trading_day(
                 db=db, session_date=session_date,
@@ -260,14 +268,15 @@ if __name__ == "__main__":
 
             for row in pairs_parameters.itertuples():
                 tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
-                plt.plot(tradable_pair.time, tradable_pair.z_score)
-                plt.show()
+                # plt.plot(tradable_pair.time, tradable_pair.z_score)
+                # plt.show()
                 trades = simulate_trades(
                     tradable_pair,
                     'M1',
                     row.hedge_ratio,
                     row.half_life_minutes,
-                    4,2, 0.5, 3, 1)
+                    symbols_info,
+                    4,1.5, 0.5, 3, 1)
                 if not trades.empty:
                     sum_pnl = trades['gross_pnl'].sum()
                     results.append(sum_pnl)
