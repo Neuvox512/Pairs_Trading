@@ -12,7 +12,8 @@ from src.strategy.intraday_strategy.tools import (
     get_strat_dates,
     get_global_candidate_pairs,
     confirm_local_candidate_pairs,
-    get_pairs_parameters)
+    get_pairs_parameters,
+    standartize_lot)
 from matplotlib import pyplot as plt
 
 
@@ -26,7 +27,7 @@ def simulate_trades(
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
         acceptable_z_score : float = 4.5,
-        lot : float = 1.0
+        base_lot : float = 1.0
 ) -> pd.DataFrame:
 
     if tradable_pairs_data.empty:
@@ -44,8 +45,8 @@ def simulate_trades(
     symbol_2 = prices['symbol_2'].iloc[0]
     symbol_1_info = symbols_info[symbols_info['symbol'] == symbol_1]
     symbol_2_info = symbols_info[symbols_info['symbol'] == symbol_2]
-    contract_size_1 = symbol_1_info.contract_size
-    contract_size_2 = symbol_2_info.contract_size
+    lot_1 = standartize_lot(base_lot, symbol_1_info)
+    lot_2 = standartize_lot(lot_1 * hedge_ratio, symbol_2_info)
     stop_loss_time = half_time_minutes * half_time_multiplier
     last_bar = len(prices) - 1
 
@@ -76,8 +77,8 @@ def simulate_trades(
             entry_time = current_time
             entry_price_1 = current_bar.symbol_1_close
             entry_price_2 = current_bar.symbol_2_close
-            quantity_1 = direction * lot * contract_size_1
-            quantity_2 = -direction * lot * hedge_ratio * contract_size_2
+            quantity_1 = direction * lot_1 * symbol_1_info.contract_size
+            quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
 
             continue
 
@@ -270,13 +271,8 @@ if __name__ == "__main__":
                 tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
                 # plt.plot(tradable_pair.time, tradable_pair.z_score)
                 # plt.show()
-                trades = simulate_trades(
-                    tradable_pair,
-                    'M1',
-                    row.hedge_ratio,
-                    row.half_life_minutes,
-                    symbols_info,
-                    4,1.5, 0.5, 3, 1)
+                trades = simulate_trades(tradable_pair, 'M1', row.hedge_ratio, row.half_life_minutes, symbols_info, 4,
+                                         1.5, 0.5, 3, 1)
                 if not trades.empty:
                     sum_pnl = trades['gross_pnl'].sum()
                     results.append(sum_pnl)

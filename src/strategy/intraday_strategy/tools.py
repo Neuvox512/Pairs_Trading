@@ -1,3 +1,4 @@
+import decimal
 from datetime import date
 import pandas as pd
 from src.analysis.cointegration import screen_local_pairs
@@ -8,6 +9,20 @@ from src.analysis.pairs_selection import historical_screening, select_candidate_
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
 from src.analysis.pairs_parameters_calculation import calculate_global_pairs_parameters
 from src.data.market_session import get_session_prices
+from decimal import Decimal
+
+
+def standartize_lot(lot : float, symbols_info : pd.Series) -> float | None:
+    lot_step = Decimal(str(symbols_info.volume_step))
+    min_lot = Decimal(str(symbols_info.volume_min))
+    max_lot = Decimal (str(symbols_info.volume_max))
+
+    lot = (Decimal(str(lot)) // lot_step) * lot_step
+
+    if not min_lot <= lot <= max_lot:
+        return None
+
+    return float(lot)
 
 
 def get_pairs_parameters(
