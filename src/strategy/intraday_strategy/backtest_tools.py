@@ -23,7 +23,7 @@ def backtest_session(
         session_date : date,
         timeframe: str,
         symbols_info: pd.DataFrame,
-        half_time_multiplier: float = 2.0,
+        half_life_multiplier: float = 2.0,
         entry_z_score: float = 2.0,
         exit_z_score: float = 0.5,
         acceptable_z_score: float = 4.5,
@@ -61,21 +61,11 @@ def backtest_session(
 
     for pair in pairs_parameters.itertuples():
         tradable_pairs_data = tradable_data[
-            tradable_data['symbol_1'] == pair.first_symbol & tradable_data['symbol_2'] == pair.second_symbol
+            (tradable_data['symbol_1'] == pair.first_symbol) & (tradable_data['symbol_2'] == pair.second_symbol)
         ]
 
-        trades = simulate_trades(
-            tradable_pairs_data,
-            timeframe,
-            symbols_info,
-            pair.hedge_ratio,
-            pair.half_time_minutes,
-            half_time_multiplier,
-            entry_z_score,
-            exit_z_score,
-            acceptable_z_score,
-            base_lot
-        )
+        trades = simulate_trades(tradable_pairs_data, timeframe, symbols_info, pair.hedge_ratio, pair.half_life_minutes,
+                                 half_life_multiplier, entry_z_score, exit_z_score, acceptable_z_score, base_lot)
 
         if not trades.empty:
             trades['session_date'] = session_date
@@ -94,8 +84,8 @@ def simulate_trades(
         timeframe : str,
         symbols_info : pd.DataFrame,
         hedge_ratio: float,
-        half_time_minutes: float,
-        half_time_multiplier: float = 2.0,
+        half_life_minutes: float,
+        half_life_multiplier: float = 2.0,
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
         acceptable_z_score : float = 4.5,
@@ -104,12 +94,12 @@ def simulate_trades(
 
     if tradable_pairs_data.empty:
         return pd.DataFrame()
-    if half_time_minutes <= 0:
+    if half_life_minutes <= 0:
         raise ValueError (f'Half_time should be positive')
     if not 0 <= exit_z_score < entry_z_score < acceptable_z_score:
         raise ValueError (f'Exit-Z-score should be between 0 and Entry-Z-score'\
                           'Acceptable-Z-score should be greater than Entry-Z-score')
-    if half_time_multiplier <= 0:
+    if half_life_multiplier <= 0:
         raise ValueError (f'Holding-multiplier should be positive')
 
     prices = tradable_pairs_data.sort_values('time').reset_index(drop=True)
@@ -130,7 +120,7 @@ def simulate_trades(
     )
     if lot_2 is None:
         return pd.DataFrame()
-    stop_loss_time = half_time_minutes * half_time_multiplier
+    stop_loss_time = half_life_minutes * half_life_multiplier
     last_bar = len(prices) - 1
 
     direction = 0
