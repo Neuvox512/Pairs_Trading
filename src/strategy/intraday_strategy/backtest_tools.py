@@ -14,6 +14,7 @@ from src.strategy.intraday_strategy.tools import (
     confirm_local_candidate_pairs,
     get_pairs_parameters,
     standartize_lot)
+from _decimal import Decimal
 from matplotlib import pyplot as plt
 
 
@@ -47,10 +48,15 @@ def simulate_trades(
     symbol_2_info = symbols_info[symbols_info['symbol'] == symbol_2].iloc[0]
     contract_size_1 = symbol_1_info.contract_size
     contract_size_2 = symbol_2_info.contract_size
-    lot_1 = standartize_lot(base_lot, symbol_1_info)
+    lot_1 = standartize_lot(Decimal(str(base_lot)), symbol_1_info)
     if lot_1 is None:
         return pd.DataFrame()
-    lot_2 = standartize_lot(lot_1 * abs(hedge_ratio) * contract_size_1/contract_size_2, symbol_2_info)
+    lot_2 = standartize_lot(
+        Decimal(str(base_lot))
+        * abs(Decimal(str(hedge_ratio)))
+        * Decimal(str(contract_size_1))/Decimal(str(contract_size_2)),
+        symbol_2_info
+    )
     if lot_2 is None:
         return pd.DataFrame()
     stop_loss_time = half_time_minutes * half_time_multiplier
@@ -261,10 +267,11 @@ if __name__ == "__main__":
     results = []
     for i in range(1,29):
         try:
-            session_date = date(2026, 6, 30-i)
+            session_date = date(2026, 7, 30-i)
             timeframe = "M1"
             pairs_parameters = prepare_trading_day(
-                db=db, session_date=session_date,
+                db=db,
+                session_date=session_date,
                 timeframe=timeframe,
                 liquidity_sessions=10,
                 coint_sessions=1,
@@ -281,7 +288,7 @@ if __name__ == "__main__":
                 # plt.plot(tradable_pair.time, tradable_pair.z_score)
                 # plt.show()
                 trades = simulate_trades(tradable_pair, 'M1', row.hedge_ratio, row.half_life_minutes, symbols_info, 4,
-                                         1.5, 0.5, 3, 1)
+                                         2, 0.5, 3, 1)
                 if not trades.empty:
                     sum_pnl = trades['gross_pnl'].sum()
                     results.append(sum_pnl)

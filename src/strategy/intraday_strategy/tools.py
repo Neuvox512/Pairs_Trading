@@ -12,7 +12,7 @@ from src.data.market_session import get_session_prices
 from decimal import Decimal
 
 
-def standartize_lot(lot : float, symbols_info : pd.Series) -> float | None:
+def standartize_lot(lot : float | Decimal, symbols_info : pd.Series) -> float | None:
     lot_step = Decimal(str(symbols_info.volume_step))
     min_lot = Decimal(str(symbols_info.volume_min))
     max_lot = Decimal (str(symbols_info.volume_max))
