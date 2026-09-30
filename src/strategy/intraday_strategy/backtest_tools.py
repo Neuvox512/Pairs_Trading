@@ -84,7 +84,10 @@ def simulate_trades(
             entry_price_1 = current_bar.symbol_1_close
             entry_price_2 = current_bar.symbol_2_close
             quantity_1 = direction * lot_1 * symbol_1_info.contract_size
-            quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+            if hedge_ratio > 0:
+                quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+            else:
+                quantity_2 = direction * lot_2 * symbol_2_info.contract_size
 
             continue
 
