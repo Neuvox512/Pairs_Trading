@@ -28,7 +28,7 @@ def calculate_global_pairs_parameters(
                 'hedge_ratio': hedge_ratio,
                 'spread_mean': spread_mean,
                 'spread_std': spread_std,
-                'half_life_(minutes)': half_life,
+                'half_life_minutes': half_life,
             }
         )
 

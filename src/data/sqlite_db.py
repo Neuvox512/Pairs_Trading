@@ -36,7 +36,11 @@ class SQLiteDB:
         query = """
         CREATE TABLE IF NOT EXISTS symbols(
             symbol TEXT PRIMARY KEY,
-            point REAL NOT NULL
+            point REAL NOT NULL,
+            contract_size REAL NOT NULL,
+            volume_min REAL NOT NULL,
+            volume_max REAL NOT NULL,
+            volume_step REAL NOT NULL
             )
         """
         with self.connect() as conn:
@@ -97,12 +101,19 @@ class SQLiteDB:
 
     def save_symbols(self, symbols : pd.DataFrame) -> None:
         query = """
-        INSERT INTO symbols (symbol, point)
-        VALUES (?, ?)
+        INSERT INTO symbols (symbol, point, contract_size, volume_min, volume_max, volume_step)
+        VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT (symbol)
-        DO UPDATE SET point = excluded.point
+        DO UPDATE SET 
+        point = excluded.point,
+        contract_size = excluded.contract_size,
+        volume_min = excluded.volume_min,
+        volume_max = excluded.volume_max,
+        volume_step = excluded.volume_step
         """
-        params = symbols[['symbol', 'point']].itertuples(index = False, name = None)
+        params = symbols[
+            ['symbol', 'point', 'contract_size', 'volume_min', 'volume_max', 'volume_step']
+        ].itertuples(index = False, name = None)
 
         with self.connect() as conn:
             conn.executemany(query, params)
@@ -136,6 +147,24 @@ class SQLiteDB:
         bars['time_utc'] = pd.to_datetime(bars['time_utc'], unit = 's', utc = True)
 
         return bars
+
+    def load_symbols(self) -> pd.DataFrame:
+        query = """
+        SELECT 
+            symbol,
+            point,
+            contract_size,
+            volume_min,
+            volume_max,
+            volume_step
+        FROM symbols
+        ORDER BY symbol
+        """
+
+        with self.connect() as conn:
+            symbols = pd.read_sql_query(query, conn)
+
+        return symbols
 
     def get_latest_bar_time(self, symbol : str, timeframe : str) -> datetime | None:
         query = """SELECT MAX(time_utc) FROM bars WHERE symbol = ? AND timeframe = ?"""

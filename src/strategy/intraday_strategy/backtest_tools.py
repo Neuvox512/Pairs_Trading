@@ -118,6 +118,8 @@ def simulate_trades(
                 'entry_price_2' : entry_price_2,
                 'exit_price_2' : exit_price_2,
                 'holding_time_(min)' : time_passed,
+                'quantity_1' : quantity_1,
+                'quantity_2' : quantity_2,
                 'gross_pnl_1' : gross_pnl_1,
                 'gross_pnl_2' : gross_pnl_2,
                 'gross_pnl' : gross_pnl,
@@ -237,37 +239,42 @@ if __name__ == "__main__":
 
     count = []
     db = SQLiteDB(db_path)
+
+    results = []
     for i in range(1,29):
-        session_date = date(2026, 8, 29-i)
-        timeframe = "M1"
-        pairs_parameters = prepare_trading_day(
-            db=db, session_date=session_date,
-            timeframe=timeframe,
-            liquidity_sessions=10,
-            coint_sessions=1,
-            min_coverage_quantile=0.75,
-            min_tick_volume_quantile=0.75,
-            max_spread_quantile=0.25,
-            global_fdr_level= 0.05,
-            local_fdr_level=0.05)
-        tradable_data = get_tradable_data(db, pairs_parameters, session_date, timeframe, 90)
-        # print(tradable_data)
-        results = []
-        for row in pairs_parameters.itertuples():
-            tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
-            # plt.plot(tradable_pair.time, tradable_pair.z_score)
-            # plt.show()
-            trades = simulate_trades(
-                tradable_pair,
-                'M1',
-                row.hedge_ratio,
-                20,
-                2,1.5, 0.6, 3, 1)
-            if not trades.empty:
-                sum_pnl = trades['gross_pnl'].sum()
-                results.append(sum_pnl)
-        total_pnl = sum(results)
-        print(total_pnl)
+        try:
+            session_date = date(2026, 8, 30-i)
+            timeframe = "M1"
+            pairs_parameters = prepare_trading_day(
+                db=db, session_date=session_date,
+                timeframe=timeframe,
+                liquidity_sessions=10,
+                coint_sessions=1,
+                min_coverage_quantile=0.75,
+                min_tick_volume_quantile=0.75,
+                max_spread_quantile=0.25,
+                global_fdr_level= 0.05,
+                local_fdr_level=0.05)
+            tradable_data = get_tradable_data(db, pairs_parameters, session_date, timeframe, 90)
+            # print(tradable_data)
+
+            for row in pairs_parameters.itertuples():
+                tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
+                plt.plot(tradable_pair.time, tradable_pair.z_score)
+                plt.show()
+                trades = simulate_trades(
+                    tradable_pair,
+                    'M1',
+                    row.hedge_ratio,
+                    row.half_life_minutes,
+                    4,2, 0.5, 3, 1)
+                if not trades.empty:
+                    sum_pnl = trades['gross_pnl'].sum()
+                    results.append(sum_pnl)
+        except Exception as e: print(e)
+        print(sum(results))
+    total_pnl = sum(results)
+    print(total_pnl)
 
 
     # for i in range(1,30):

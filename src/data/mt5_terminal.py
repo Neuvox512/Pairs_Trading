@@ -69,10 +69,14 @@ class MT5Terminal:
                     {
                         'symbol': symbol.name,
                         'point': symbol.point,
+                        'contract_size' : symbol.trade_contract_size,
+                        'volume_min': symbol.volume_min,
+                        'volume_max': symbol.volume_max,
+                        'volume_step': symbol.volume_step,
                     }
                 )
 
-        return pd.DataFrame(us_cfd_symbols, columns=['symbol', 'point'])
+        return pd.DataFrame(us_cfd_symbols)
 
 
     def get_latest_closed_bar_time(self, symbol: str, timeframe: str,) -> None | pd.Timestamp:
