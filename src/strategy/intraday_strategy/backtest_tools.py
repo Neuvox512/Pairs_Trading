@@ -50,7 +50,9 @@ def simulate_trades(
     lot_1 = standartize_lot(base_lot, symbol_1_info)
     if lot_1 is None:
         return pd.DataFrame()
-    lot_2 = standartize_lot(lot_1 * hedge_ratio * contract_size_1/contract_size_2, symbol_2_info)
+    lot_2 = standartize_lot(lot_1 * abs(hedge_ratio) * contract_size_1/contract_size_2, symbol_2_info)
+    if lot_2 is None:
+        return pd.DataFrame()
     stop_loss_time = half_time_minutes * half_time_multiplier
     last_bar = len(prices) - 1
 
