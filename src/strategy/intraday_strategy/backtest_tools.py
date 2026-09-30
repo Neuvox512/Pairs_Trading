@@ -18,12 +18,83 @@ from decimal import Decimal
 from matplotlib import pyplot as plt
 
 
+def backtest_session(
+        db : SQLiteDB,
+        session_date : date,
+        timeframe: str,
+        symbols_info: pd.DataFrame,
+        half_time_multiplier: float = 2.0,
+        entry_z_score: float = 2.0,
+        exit_z_score: float = 0.5,
+        acceptable_z_score: float = 4.5,
+        base_lot: float = 1.0,
+        liquidity_sessions: int = 20,
+        coint_sessions: int = 2,
+        min_coverage_quantile: float = 0.9,
+        min_tick_volume_quantile: float = 0.9,
+        max_spread_quantile: float = 0.1,
+        opening_minutes: int = 90,
+        global_fdr_level: float = 0.1,
+        local_fdr_level: float = 0.05,
+) -> pd.DataFrame:
+
+    pairs_parameters = prepare_trading_day(
+        db,
+        session_date,
+        timeframe,
+        liquidity_sessions,
+        coint_sessions,
+        min_coverage_quantile,
+        min_tick_volume_quantile,
+        max_spread_quantile,
+        opening_minutes,
+        global_fdr_level,
+        local_fdr_level)
+
+    if pairs_parameters.empty: return pd.DataFrame()
+
+    tradable_data = get_tradable_data(db,pairs_parameters, session_date, timeframe, opening_minutes)
+
+    if tradable_data.empty: return pd.DataFrame()
+
+    daily_trades = []
+
+    for pair in pairs_parameters.itertuples():
+        tradable_pairs_data = tradable_data[
+            tradable_data['symbol_1'] == pair.first_symbol & tradable_data['symbol_2'] == pair.second_symbol
+        ]
+
+        trades = simulate_trades(
+            tradable_pairs_data,
+            timeframe,
+            symbols_info,
+            pair.hedge_ratio,
+            pair.half_time_minutes,
+            half_time_multiplier,
+            entry_z_score,
+            exit_z_score,
+            acceptable_z_score,
+            base_lot
+        )
+
+        if not trades.empty:
+            trades['session_date'] = session_date
+            daily_trades.append(trades)
+
+    if not daily_trades:
+        return pd.DataFrame()
+
+    return pd.concat(daily_trades, ignore_index=True).sort_values('entry_time').reset_index(drop = True)
+
+
+
+
 def simulate_trades(
         tradable_pairs_data : pd.DataFrame,
         timeframe : str,
-        hedge_ratio: float,
-        half_time_minutes : float,
         symbols_info : pd.DataFrame,
+        hedge_ratio: float,
+        half_time_minutes: float,
         half_time_multiplier: float = 2.0,
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
@@ -133,6 +204,7 @@ def simulate_trades(
             {
                 'symbol_1' : current_bar.symbol_1,
                 'symbol_2' : current_bar.symbol_2,
+                'timeframe' : timeframe,
                 'direction' : direction,
                 'entry_time' : entry_time,
                 'exit_time' : exit_time,
@@ -267,7 +339,7 @@ if __name__ == "__main__":
     results = []
     for i in range(1,29):
         try:
-            session_date = date(2026, 7, 30-i)
+            session_date = date(2026, 4, 30-i)
             timeframe = "M1"
             pairs_parameters = prepare_trading_day(
                 db=db,
@@ -287,14 +359,8 @@ if __name__ == "__main__":
                 tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
                 # plt.plot(tradable_pair.time, tradable_pair.z_score)
                 # plt.show()
-                trades = simulate_trades(
-                    tradable_pair,
-                    'M1',
-                    row.hedge_ratio,
-                    row.half_life_minutes,
-                    symbols_info,
-                    3,
-                    2, 0.5, 3.5, 1)
+                trades = simulate_trades(tradable_pair, 'M1', symbols_info, row.hedge_ratio, row.half_life_minutes, 3,
+                                         2, 0.5, 3.5, 1)
                 if not trades.empty:
                     sum_pnl = trades['gross_pnl'].sum()
                     results.append(sum_pnl)
