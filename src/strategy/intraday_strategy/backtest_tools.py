@@ -143,28 +143,28 @@ def simulate_trades(
             if abs(signal_z_score) >= acceptable_z_score:
                 continue
 
-            # SELL by Bid price
+            # SELL Spread
             if signal_z_score > entry_z_score:
                 direction = -1
                 entry_price_1 = current_bar.symbol_1_close
                 quantity_1 = direction * lot_1 * symbol_1_info.contract_size
                 if hedge_ratio > 0:
-                    entry_price_2 = current_bar.symbol_2_close
+                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
                     quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
                 elif hedge_ratio < 0:
-                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
+                    entry_price_2 = current_bar.symbol_2_close
                     quantity_2 = direction * lot_2 * symbol_2_info.contract_size
 
-            # BUY by Ask price (+spread)
+            # BUY Spread
             elif signal_z_score < -entry_z_score:
                 direction = 1
                 entry_price_1 = current_bar.symbol_1_close + spread_price_1
                 quantity_1 = direction * lot_1 * symbol_1_info.contract_size
                 if hedge_ratio > 0:
-                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
+                    entry_price_2 = current_bar.symbol_2_close
                     quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
                 elif hedge_ratio < 0:
-                    entry_price_2 = current_bar.symbol_2_close
+                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
                     quantity_2 = direction * lot_2 * symbol_2_info.contract_size
 
             else: continue
@@ -237,7 +237,6 @@ def simulate_trades(
         )
 
         direction = 0
-        entry_bar = None
         entry_time = None
 
         if exit_reason == 'max_accepted_z_score':
