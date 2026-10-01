@@ -200,125 +200,181 @@ def simulate_trades(
     last_bar = len(prices) - 1
 
     direction = 0
-    trades = []
     entry_time = None
+    trading_enabled = True
+    tradable_pair_history = []
 
     for i in range(1, len(prices)):
-        signal_bar = prices.iloc[i-1]
-        signal_z_score = signal_bar.z_score
         current_bar = prices.iloc[i]
-        spread_price_1 = current_bar.symbol_1_spread * symbol_1_info.point
-        spread_price_2 = current_bar.symbol_2_spread * symbol_2_info.point
-        # open time + timeframes time = close time
         current_time = current_bar.time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
 
-        if direction == 0:
-            if i == last_bar:
-                continue
+        bid_1 = current_bar.symbol_1_close
+        ask_1 = bid_1 + current_bar.spread * symbol_1_info.point
+        bid_2 = current_bar.symbol_2_close
+        ask_2 = bid_2  + current_bar.spread * symbol_2_info.point
 
-            if abs(signal_z_score) >= acceptable_z_score:
-                continue
+        if i > 0:
+            signal_z_score = prices.iloc[i-1].z_score
 
-            # SELL Spread
-            if signal_z_score > entry_z_score:
-                direction = -1
-                entry_price_1 = current_bar.symbol_1_close
-                quantity_1 = direction * lot_1 * symbol_1_info.contract_size
-                if hedge_ratio > 0:
-                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
-                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
-                elif hedge_ratio < 0:
-                    entry_price_2 = current_bar.symbol_2_close
-                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+            if direction != 0:
+                time_passed = (current_time - entry_time).total_seconds()/60
 
-            # BUY Spread
-            elif signal_z_score < -entry_z_score:
-                direction = 1
-                entry_price_1 = current_bar.symbol_1_close + spread_price_1
-                quantity_1 = direction * lot_1 * symbol_1_info.contract_size
-                if hedge_ratio > 0:
-                    entry_price_2 = current_bar.symbol_2_close
-                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
-                elif hedge_ratio < 0:
-                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
-                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+                stop_by_acceptable_z_score = (
+                        (direction == 1 and signal_z_score <= -acceptable_z_score)
+                        or (direction == -1 and signal_z_score >= acceptable_z_score)
+                )
 
-            else: continue
+                stop_by_mean_revertion = (
+                        (direction == 1 and signal_z_score > -exit_z_score)
+                        or (direction == -1 and signal_z_score < exit_z_score)
+                )
+                time_stop = time_passed >= stop_loss_time
+                session_end = i == last_bar
 
-            entry_time = current_time
+                if stop_by_mean_revertion or stop_by_acceptable_z_score or time_stop or session_end:
+                    direction = 0
+                    entry_time = None
+                    if stop_by_acceptable_z_score: trading_enabled = False
 
-            continue
+            elif trading_enabled and i<last_bar and abs(signal_z_score) < acceptable_z_score:
+                if signal_z_score > entry_z_score:
+                    direction = -1
+                elif signal_z_score < -entry_z_score:
+                    direction = 1
+                entry_time = current_time
 
-        time_passed = (current_time - entry_time).total_seconds() / 60
+        quantity_1 = direction * lot_1 * symbol_1_info.contract_size
+        if hedge_ratio > 0:
+            quantity_2 = -direction * lot_2 * contract_size_2
+        else:
+            quantity_2 = direction * lot_2 * contract_size_2
 
-        if (
-            (direction == 1 and signal_z_score <= -acceptable_z_score)
-            or
-            (direction == -1 and signal_z_score >= acceptable_z_score)
-        ):
-            exit_reason = 'max_accepted_z_score'
-
-        elif i == last_bar:
-            exit_reason = 'session_end'
-
-        elif time_passed >= stop_loss_time:
-            exit_reason = 'time_stop_loss'
-
-        elif (
-                (direction == 1 and signal_z_score > -exit_z_score)
-                or
-                (direction == -1 and signal_z_score < exit_z_score)
-        ):
-            exit_reason = 'mean revertion'
-
-        else: continue
-
-        # closing position
-        exit_time = current_time
-
-        if quantity_1 < 0:
-            exit_price_1 = current_bar.symbol_1_close + spread_price_1
-        elif quantity_1 > 0:
-            exit_price_1 = current_bar.symbol_1_close
-
-        if quantity_2 < 0:
-            exit_price_2 = current_bar.symbol_2_close + spread_price_2
-        elif quantity_2 > 0:
-            exit_price_2 = current_bar.symbol_2_close
-
-        net_pnl_1 = quantity_1 * (exit_price_1 - entry_price_1)
-        net_pnl_2 = quantity_2 * (exit_price_2 - entry_price_2)
-        net_pnl = net_pnl_1 + net_pnl_2
-
-        trades.append(
+        tradable_pair_history.append(
             {
-                'symbol_1' : current_bar.symbol_1,
-                'symbol_2' : current_bar.symbol_2,
-                'timeframe' : timeframe,
-                'direction' : direction,
-                'entry_time' : entry_time,
-                'exit_time' : exit_time,
-                'entry_price_1' : entry_price_1,
-                'exit_price_1' : exit_price_1,
-                'entry_price_2' : entry_price_2,
-                'exit_price_2' : exit_price_2,
-                'holding_time_(min)' : time_passed,
-                'quantity_1' : quantity_1,
-                'quantity_2' : quantity_2,
-                'net_pnl_1' : net_pnl_1,
-                'net_pnl_2' : net_pnl_2,
-                'net_pnl' : net_pnl,
-                'exit_reason' : exit_reason
+                "time": current_time,
+                "symbol_1": symbol_1,
+                "symbol_2": symbol_2,
+                "timeframe": timeframe,
+                "direction": direction,
+                "quantity_1": quantity_1,
+                "quantity_2": quantity_2,
+                "bid_1": bid_1,
+                "ask_1": ask_1,
+                "bid_2": bid_2,
+                "ask_2": ask_2,
+                "z_score": current_bar.z_score,
             }
         )
 
-        direction = 0
-        entry_time = None
+    return pd.DataFrame(tradable_pair_history)
 
-        if exit_reason == 'max_accepted_z_score':
-            break
-
-    return pd.DataFrame(trades)
+    #     if direction == 0:
+    #         if i == last_bar:
+    #             continue
+    #
+    #         if abs(signal_z_score) >= acceptable_z_score:
+    #             continue
+    #
+    #         # SELL Spread
+    #         if signal_z_score > entry_z_score:
+    #             direction = -1
+    #             entry_price_1 = current_bar.symbol_1_close
+    #             quantity_1 = direction * lot_1 * symbol_1_info.contract_size
+    #             if hedge_ratio > 0:
+    #                 entry_price_2 = current_bar.symbol_2_close + spread_price_2
+    #                 quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+    #             elif hedge_ratio < 0:
+    #                 entry_price_2 = current_bar.symbol_2_close
+    #                 quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+    #
+    #         # BUY Spread
+    #         elif signal_z_score < -entry_z_score:
+    #             direction = 1
+    #             entry_price_1 = current_bar.symbol_1_close + spread_price_1
+    #             quantity_1 = direction * lot_1 * symbol_1_info.contract_size
+    #             if hedge_ratio > 0:
+    #                 entry_price_2 = current_bar.symbol_2_close
+    #                 quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+    #             elif hedge_ratio < 0:
+    #                 entry_price_2 = current_bar.symbol_2_close + spread_price_2
+    #                 quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+    #
+    #         else: continue
+    #
+    #         entry_time = current_time
+    #
+    #         continue
+    #
+    #     time_passed = (current_time - entry_time).total_seconds() / 60
+    #
+    #     if (
+    #         (direction == 1 and signal_z_score <= -acceptable_z_score)
+    #         or
+    #         (direction == -1 and signal_z_score >= acceptable_z_score)
+    #     ):
+    #         exit_reason = 'max_accepted_z_score'
+    #
+    #     elif i == last_bar:
+    #         exit_reason = 'session_end'
+    #
+    #     elif time_passed >= stop_loss_time:
+    #         exit_reason = 'time_stop_loss'
+    #
+    #     elif (
+    #             (direction == 1 and signal_z_score > -exit_z_score)
+    #             or
+    #             (direction == -1 and signal_z_score < exit_z_score)
+    #     ):
+    #         exit_reason = 'mean revertion'
+    #
+    #     else: continue
+    #
+    #     # closing position
+    #     exit_time = current_time
+    #
+    #     if quantity_1 < 0:
+    #         exit_price_1 = current_bar.symbol_1_close + spread_price_1
+    #     elif quantity_1 > 0:
+    #         exit_price_1 = current_bar.symbol_1_close
+    #
+    #     if quantity_2 < 0:
+    #         exit_price_2 = current_bar.symbol_2_close + spread_price_2
+    #     elif quantity_2 > 0:
+    #         exit_price_2 = current_bar.symbol_2_close
+    #
+    #     net_pnl_1 = quantity_1 * (exit_price_1 - entry_price_1)
+    #     net_pnl_2 = quantity_2 * (exit_price_2 - entry_price_2)
+    #     net_pnl = net_pnl_1 + net_pnl_2
+    #
+    #     trades.append(
+    #         {
+    #             'symbol_1' : current_bar.symbol_1,
+    #             'symbol_2' : current_bar.symbol_2,
+    #             'timeframe' : timeframe,
+    #             'direction' : direction,
+    #             'entry_time' : entry_time,
+    #             'exit_time' : exit_time,
+    #             'entry_price_1' : entry_price_1,
+    #             'exit_price_1' : exit_price_1,
+    #             'entry_price_2' : entry_price_2,
+    #             'exit_price_2' : exit_price_2,
+    #             'holding_time_(min)' : time_passed,
+    #             'quantity_1' : quantity_1,
+    #             'quantity_2' : quantity_2,
+    #             'net_pnl_1' : net_pnl_1,
+    #             'net_pnl_2' : net_pnl_2,
+    #             'net_pnl' : net_pnl,
+    #             'exit_reason' : exit_reason
+    #         }
+    #     )
+    #
+    #     direction = 0
+    #     entry_time = None
+    #
+    #     if exit_reason == 'max_accepted_z_score':
+    #         break
+    #
+    # return pd.DataFrame(trades)
 
 
 def get_tradable_data(
