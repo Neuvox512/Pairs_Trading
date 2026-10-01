@@ -6,8 +6,12 @@ from src.analysis.liquidity_filtration import (
     get_liquidity_params_quantiles)
 from src.analysis.pairs_parameters_calculation import calculate_pair_spread, calculate_pair_spread_z_score
 from src.data.sqlite_db import SQLiteDB
-from src.data.market_session import get_full_session_bar_range, get_local_session_bar_range, get_session_data
-from src.strategy.intraday_strategy.general_tools import (
+from src.data.market_session import (
+    get_full_session_bar_range,
+    get_local_session_bar_range,
+    get_session_data,
+    get_trading_dates)
+from src.strategies.intraday_strategy.general_tools import (
     get_symbols_liquidity,
     get_strat_dates,
     get_global_candidate_pairs,
@@ -16,6 +20,78 @@ from src.strategy.intraday_strategy.general_tools import (
     standartize_lot)
 from decimal import Decimal
 from matplotlib import pyplot as plt
+from tqdm import tqdm
+
+
+def backtest_period(
+        db : SQLiteDB,
+        start_date : date,
+        end_date : date,
+        timeframe: str,
+        half_life_multiplier: float = 2.0,
+        entry_z_score: float = 2.0,
+        exit_z_score: float = 0.5,
+        acceptable_z_score: float = 4.5,
+        base_lot: float = 1.0,
+        liquidity_sessions: int = 20,
+        coint_sessions: int = 2,
+        min_coverage_quantile: float = 0.9,
+        min_tick_volume_quantile: float = 0.9,
+        max_spread_quantile: float = 0.1,
+        opening_minutes: int = 90,
+        global_fdr_level: float = 0.1,
+        local_fdr_level: float = 0.05,
+) -> pd.DataFrame:
+
+    trading_dates = get_trading_dates(start_date, end_date)
+    symbols_info = db.load_symbols()
+
+    trades = []
+    daily_results = dict()
+
+    for session in tqdm(trading_dates, desc = 'Backtest sessions'):
+        session_trades = backtest_session(
+            db,
+            session,
+            timeframe,
+            symbols_info,
+            half_life_multiplier,
+            entry_z_score,
+            exit_z_score,
+            acceptable_z_score,
+            base_lot,
+            liquidity_sessions,
+            coint_sessions,
+            min_coverage_quantile,
+            min_tick_volume_quantile,
+            max_spread_quantile,
+            opening_minutes,
+            global_fdr_level,
+            local_fdr_level,
+        )
+
+        if session_trades.empty:
+            daily_pnl = 0
+        else:
+            daily_pnl = session_trades['net_pnl'].sum()
+            trades.append(session_trades)
+
+        daily_results = (
+            {
+                'session_date': session,
+                'trades_count': len(session_trades),
+                'net_pnl': daily_pnl,
+            }
+        )
+
+    if trades:
+        trades = pd.concat(trades, ignore_index=True)
+        trades = trades.sort_values('entry_time').reset_index(drop = True)
+    else: trades =  pd.DataFrame()
+
+    daily_results = pd.DataFrame(daily_results)
+
+    return daily_results, trades
 
 
 def backtest_session(
