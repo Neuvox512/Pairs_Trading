@@ -15,7 +15,6 @@ def test_get_session_data(sim_db) -> None:
 
     session_data = get_session_data(sim_db, symbols, timeframe, session_date)
 
-    print(session_data.columns.tolist())
     assert len(session_data) == 390
     assert  session_data.columns.tolist() == [
         ('close', 'first_i1'),

@@ -131,6 +131,8 @@ def simulate_trades(
         signal_bar = prices.iloc[i-1]
         signal_z_score = signal_bar.z_score
         current_bar = prices.iloc[i]
+        spread_price_1 = current_bar.symbol_1_spread * symbol_1_info.point
+        spread_price_2 = current_bar.symbol_2_spread * symbol_2_info.point
         # open time + timeframes time = close time
         current_time = current_bar.time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
 
@@ -145,22 +147,29 @@ def simulate_trades(
             if signal_z_score > entry_z_score:
                 direction = -1
                 entry_price_1 = current_bar.symbol_1_close
+                quantity_1 = direction * lot_1 * symbol_1_info.contract_size
+                if hedge_ratio > 0:
+                    entry_price_2 = current_bar.symbol_2_close
+                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+                elif hedge_ratio < 0:
+                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
+                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
 
             # BUY by Ask price (+spread)
             elif signal_z_score < -entry_z_score:
                 direction = 1
-                entry_price_1 = current_bar.symbol_1_close + current_bar.symbol_1_spread
+                entry_price_1 = current_bar.symbol_1_close + spread_price_1
+                quantity_1 = direction * lot_1 * symbol_1_info.contract_size
+                if hedge_ratio > 0:
+                    entry_price_2 = current_bar.symbol_2_close + spread_price_2
+                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+                elif hedge_ratio < 0:
+                    entry_price_2 = current_bar.symbol_2_close
+                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+
             else: continue
 
             entry_time = current_time
-            quantity_1 = direction * lot_1 * symbol_1_info.contract_size
-
-            if hedge_ratio > 0:
-                quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
-                entry_price_2 = current_bar.symbol_1_close + current_bar.symbol_2_spread
-            else:
-                quantity_2 = direction * lot_2 * symbol_2_info.contract_size
-                entry_price_2 = current_bar.symbol_2_close
 
             continue
 
@@ -192,12 +201,12 @@ def simulate_trades(
         exit_time = current_time
 
         if direction == -1:
-            exit_price_1 = current_bar.symbol_1_close + current_bar.symbol_1_spread
+            exit_price_1 = current_bar.symbol_1_close + spread_price_1
         elif direction == 1:
             exit_price_1 = current_bar.symbol_1_close
 
         if hedge_ratio < 0:
-            exit_price_2 = current_bar.symbol_2_close + current_bar.symbol_2_spread
+            exit_price_2 = current_bar.symbol_2_close + spread_price_2
         elif hedge_ratio > 0:
             exit_price_2 = current_bar.symbol_2_close
 
@@ -221,9 +230,9 @@ def simulate_trades(
                 'holding_time_(min)' : time_passed,
                 'quantity_1' : quantity_1,
                 'quantity_2' : quantity_2,
-                'gross_pnl_1' : net_pnl_1,
-                'gross_pnl_2' : net_pnl_2,
-                'gross_pnl' : net_pnl,
+                'net_pnl_1' : net_pnl_1,
+                'net_pnl_2' : net_pnl_2,
+                'net_pnl' : net_pnl,
                 'exit_reason' : exit_reason
             }
         )
@@ -261,7 +270,7 @@ def get_tradable_data(
     results = []
     for pair in pairs_parameters.itertuples():
         pair_spread = calculate_pair_spread(
-            tradable_session_data,
+            tradable_session_data[['close']],
             pair.first_symbol,
             pair.second_symbol,
             pair.intercept,
@@ -275,8 +284,8 @@ def get_tradable_data(
             'symbol_1' : pair.first_symbol,
             'symbol_2' : pair.second_symbol,
             'time' : tradable_session_data.index,
-            'symbol_1_close' : tradable_session_data[pair.first_symbol],
-            'symbol_2_close' : tradable_session_data[pair.second_symbol],
+            'symbol_1_close' : tradable_session_data['close'][pair.first_symbol],
+            'symbol_2_close' : tradable_session_data['close'][pair.second_symbol],
             'symbol_1_spread' : tradable_session_data['spread'][pair.first_symbol],
             'symbol_2_spread': tradable_session_data['spread'][pair.second_symbol],
             'pair_spread' : pair_spread,
