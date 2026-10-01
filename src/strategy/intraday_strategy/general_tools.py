@@ -82,7 +82,7 @@ def get_local_prices (
     local_start_time, local_end_time = get_local_session_bar_range(session_date, timeframe, opening_minutes)
 
     local_market_data = db.load_market_data(symbols, timeframe, local_start_time, local_end_time)
-    local_close_prices = local_market_data[['close']].ffill().dropna()
+    local_close_prices = local_market_data['close'].ffill().dropna()
 
     return local_close_prices
 

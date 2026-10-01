@@ -150,10 +150,10 @@ def simulate_trades(
                 quantity_1 = direction * lot_1 * symbol_1_info.contract_size
                 if hedge_ratio > 0:
                     entry_price_2 = current_bar.symbol_2_close
-                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
                 elif hedge_ratio < 0:
                     entry_price_2 = current_bar.symbol_2_close + spread_price_2
-                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
 
             # BUY by Ask price (+spread)
             elif signal_z_score < -entry_z_score:
@@ -162,10 +162,10 @@ def simulate_trades(
                 quantity_1 = direction * lot_1 * symbol_1_info.contract_size
                 if hedge_ratio > 0:
                     entry_price_2 = current_bar.symbol_2_close + spread_price_2
-                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
                 elif hedge_ratio < 0:
                     entry_price_2 = current_bar.symbol_2_close
-                    quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+                    quantity_2 = direction * lot_2 * symbol_2_info.contract_size
 
             else: continue
 
@@ -200,20 +200,19 @@ def simulate_trades(
         # closing position
         exit_time = current_time
 
-        if direction == -1:
+        if quantity_1 < 0:
             exit_price_1 = current_bar.symbol_1_close + spread_price_1
-        elif direction == 1:
+        elif quantity_1 > 0:
             exit_price_1 = current_bar.symbol_1_close
 
-        if hedge_ratio < 0:
+        if quantity_2 < 0:
             exit_price_2 = current_bar.symbol_2_close + spread_price_2
-        elif hedge_ratio > 0:
+        elif quantity_2 > 0:
             exit_price_2 = current_bar.symbol_2_close
 
         net_pnl_1 = quantity_1 * (exit_price_1 - entry_price_1)
         net_pnl_2 = quantity_2 * (exit_price_2 - entry_price_2)
         net_pnl = net_pnl_1 + net_pnl_2
-
 
         trades.append(
             {
@@ -270,7 +269,7 @@ def get_tradable_data(
     results = []
     for pair in pairs_parameters.itertuples():
         pair_spread = calculate_pair_spread(
-            tradable_session_data[['close']],
+            tradable_session_data['close'],
             pair.first_symbol,
             pair.second_symbol,
             pair.intercept,
@@ -385,51 +384,3 @@ if __name__ == "__main__":
         print(sum(results))
     total_pnl = sum(results)
     print(total_pnl)
-
-
-    # for i in range(1,30):
-    #     try:
-    #         session_date = date(2026, 3, 31-i)
-    #         timeframe = "M1"
-    #
-    #         liquidity_dates, coint_dates = get_strat_dates(session_date, liquidity_sessions=10, coint_days=1)
-    #
-    #         print("Торговая дата:", session_date)
-    #         print("Таймфрейм:", timeframe)
-    #         print(
-    #             "Период оценки ликвидности:",
-    #             liquidity_dates[0],
-    #             "—",
-    #             liquidity_dates[-1],
-    #         )
-    #         print("Сессий для ликвидности:", len(liquidity_dates))
-    #         print("Сессии для коинтеграции:", coint_dates)
-    #         print("Утреннее подтверждение: первые 90 минут")
-    #
-    #         start = perf_counter()
-    #
-    #         pairs_parameters = prepare_trading_day(
-    #             db=db,
-    #             session_date=session_date,
-    #             timeframe=timeframe,
-    #             liquidity_sessions=10,
-    #             coint_sessions=1,
-    #             min_coverage_quantile=0.75,
-    #             min_tick_volume_quantile=0.75,
-    #             max_spread_quantile=0.25,
-    #         )
-    #
-    #         print("\nИтоговых пар:", len(pairs_parameters))
-    #
-    #         if pairs_parameters.empty:
-    #             print("На выбранную дату подходящих пар нет.")
-    #         else:
-    #             print(pairs_parameters.to_string(index=False))
-    #             count.append(pairs_parameters)
-    #
-    #         print(f"\nВремя выполнения: {perf_counter() - start:.2f} секунд")
-    #     except:
-    #         print (f'Выходной в {session_date}')
-    #
-    # print (len(count))
-    # print(pd.concat(count))
