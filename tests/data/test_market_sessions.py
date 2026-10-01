@@ -5,18 +5,28 @@ from src.data.market_session import (
     get_full_session_bar_range,
     get_previous_trading_dates,
     get_local_session_bar_range,
-    get_session_prices)
+    get_session_data)
 
 
-def test_get_session_prices(sim_db) -> None:
+def test_get_session_data(sim_db) -> None:
     session_date = date(2026, 8, 3)
     symbols = ['first_i1', 'indep_i1', 'stationary', 'second_i1']
     timeframe = 'M1'
 
-    session_prices = get_session_prices(sim_db, symbols, timeframe, session_date )
+    session_data = get_session_data(sim_db, symbols, timeframe, session_date)
 
-    assert len(session_prices) == 390
-    assert  session_prices.columns.tolist() == ['first_i1', 'indep_i1', 'second_i1', 'stationary']
+    print(session_data.columns.tolist())
+    assert len(session_data) == 390
+    assert  session_data.columns.tolist() == [
+        ('close', 'first_i1'),
+        ('close', 'indep_i1'),
+        ('close', 'second_i1'),
+        ('close', 'stationary'),
+        ('spread', 'first_i1'),
+        ('spread', 'indep_i1'),
+        ('spread', 'second_i1'),
+        ('spread', 'stationary')
+    ]
 
 
 def test_get_previous_trading_dates() -> None:

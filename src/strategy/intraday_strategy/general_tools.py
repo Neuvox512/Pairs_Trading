@@ -8,7 +8,7 @@ from src.data.sqlite_db import SQLiteDB
 from src.analysis.pairs_selection import historical_screening, select_candidate_pairs
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
 from src.analysis.pairs_parameters_calculation import calculate_global_pairs_parameters
-from src.data.market_session import get_session_prices
+from src.data.market_session import get_session_data
 from decimal import Decimal
 
 
@@ -39,7 +39,8 @@ def get_pairs_parameters(
     history = []
 
     for session in coint_dates:
-        session_prices = get_session_prices(db, confirmed_symbols, timeframe, session)
+        session_data = get_session_data(db, confirmed_symbols, timeframe, session)
+        session_prices = session_data['close']
         history.append(session_prices)
 
     historical_prices = pd.concat(history)
@@ -80,7 +81,7 @@ def get_local_prices (
 
     local_start_time, local_end_time = get_local_session_bar_range(session_date, timeframe, opening_minutes)
 
-    local_close_prices = db.load_close_prices(symbols, timeframe, local_start_time, local_end_time)
+    local_close_prices = db.load_market_data(symbols, timeframe, local_start_time, local_end_time)
     local_close_prices = local_close_prices.ffill().dropna()
 
     return local_close_prices

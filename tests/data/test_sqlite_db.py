@@ -86,12 +86,7 @@ def test_load_close_prices(tmp_path, sim_bars) -> None:
     start_time = sim_bars["time_utc"].iloc[-2]
     end_time = sim_bars["time_utc"].iloc[-1]
 
-    close_prices = database.load_close_prices(
-        symbols=["JPM"],
-        timeframe="M1",
-        start_time=start_time,
-        end_time=end_time,
-    )
+    close_prices = database.load_market_data(symbols=["JPM"], timeframe="M1", start_time=start_time, end_time=end_time)
 
     assert len(close_prices) == 2
     assert list(close_prices.columns) == ["JPM"]

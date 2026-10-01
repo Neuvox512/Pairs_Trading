@@ -6,7 +6,7 @@ from src.analysis.liquidity_filtration import (
     get_liquidity_params_quantiles)
 from src.analysis.pairs_parameters_calculation import calculate_pair_spread, calculate_pair_spread_z_score
 from src.data.sqlite_db import SQLiteDB
-from src.data.market_session import get_full_session_bar_range, get_local_session_bar_range, get_session_prices
+from src.data.market_session import get_full_session_bar_range, get_local_session_bar_range, get_session_data
 from src.strategy.intraday_strategy.general_tools import (
     get_symbols_liquidity,
     get_strat_dates,
@@ -141,20 +141,26 @@ def simulate_trades(
             if abs(signal_z_score) >= acceptable_z_score:
                 continue
 
+            # SELL by Bid price
             if signal_z_score > entry_z_score:
                 direction = -1
+                entry_price_1 = current_bar.symbol_1_close
+
+            # BUY by Ask price (+spread)
             elif signal_z_score < -entry_z_score:
                 direction = 1
+                entry_price_1 = current_bar.symbol_1_close + current_bar.symbol_1_spread
             else: continue
 
             entry_time = current_time
-            entry_price_1 = current_bar.symbol_1_close
-            entry_price_2 = current_bar.symbol_2_close
             quantity_1 = direction * lot_1 * symbol_1_info.contract_size
+
             if hedge_ratio > 0:
                 quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
+                entry_price_2 = current_bar.symbol_1_close + current_bar.symbol_2_spread
             else:
                 quantity_2 = direction * lot_2 * symbol_2_info.contract_size
+                entry_price_2 = current_bar.symbol_2_close
 
             continue
 
@@ -182,12 +188,22 @@ def simulate_trades(
 
         else: continue
 
+        # closing position
         exit_time = current_time
-        exit_price_1 = current_bar.symbol_1_close
-        exit_price_2 = current_bar.symbol_2_close
-        gross_pnl_1 = quantity_1 * (exit_price_1 - entry_price_1)
-        gross_pnl_2 = quantity_2 * (exit_price_2 - entry_price_2)
-        gross_pnl = gross_pnl_1 + gross_pnl_2
+
+        if direction == -1:
+            exit_price_1 = current_bar.symbol_1_close + current_bar.symbol_1_spread
+        elif direction == 1:
+            exit_price_1 = current_bar.symbol_1_close
+
+        if hedge_ratio < 0:
+            exit_price_2 = current_bar.symbol_2_close + current_bar.symbol_2_spread
+        elif hedge_ratio > 0:
+            exit_price_2 = current_bar.symbol_2_close
+
+        net_pnl_1 = quantity_1 * (exit_price_1 - entry_price_1)
+        net_pnl_2 = quantity_2 * (exit_price_2 - entry_price_2)
+        net_pnl = net_pnl_1 + net_pnl_2
 
 
         trades.append(
@@ -205,9 +221,9 @@ def simulate_trades(
                 'holding_time_(min)' : time_passed,
                 'quantity_1' : quantity_1,
                 'quantity_2' : quantity_2,
-                'gross_pnl_1' : gross_pnl_1,
-                'gross_pnl_2' : gross_pnl_2,
-                'gross_pnl' : gross_pnl,
+                'gross_pnl_1' : net_pnl_1,
+                'gross_pnl_2' : net_pnl_2,
+                'gross_pnl' : net_pnl,
                 'exit_reason' : exit_reason
             }
         )
@@ -235,17 +251,17 @@ def get_tradable_data(
 
     symbols = list(set(pairs_parameters['first_symbol'].tolist() + pairs_parameters['second_symbol'].tolist()))
 
-    all_session_prices = get_session_prices(db, symbols, timeframe, session_date)
+    session_data = get_session_data(db, symbols, timeframe, session_date)
     local_start, local_end = get_local_session_bar_range(session_date, timeframe, opening_minutes)
-    tradable_session_prices = all_session_prices[all_session_prices.index > local_end]
+    tradable_session_data = session_data[session_data.index > local_end]
 
-    if tradable_session_prices.empty:
+    if tradable_session_data.empty:
         return pd.DataFrame()
 
     results = []
     for pair in pairs_parameters.itertuples():
         pair_spread = calculate_pair_spread(
-            tradable_session_prices,
+            tradable_session_data,
             pair.first_symbol,
             pair.second_symbol,
             pair.intercept,
@@ -258,10 +274,12 @@ def get_tradable_data(
             {
             'symbol_1' : pair.first_symbol,
             'symbol_2' : pair.second_symbol,
-            'time' : tradable_session_prices.index,
-            'symbol_1_close' : tradable_session_prices[pair.first_symbol],
-            'symbol_2_close' : tradable_session_prices[pair.second_symbol],
-            'spread' : pair_spread,
+            'time' : tradable_session_data.index,
+            'symbol_1_close' : tradable_session_data[pair.first_symbol],
+            'symbol_2_close' : tradable_session_data[pair.second_symbol],
+            'symbol_1_spread' : tradable_session_data['spread'][pair.first_symbol],
+            'symbol_2_spread': tradable_session_data['spread'][pair.second_symbol],
+            'pair_spread' : pair_spread,
             'z_score' : spread_z_score
             }
         )
@@ -329,7 +347,7 @@ if __name__ == "__main__":
     results = []
     for i in range(1,29):
         try:
-            session_date = date(2026, 4, 30-i)
+            session_date = date(2026, 3, 7-i)
             timeframe = "M1"
             pairs_parameters = prepare_trading_day(
                 db=db,
@@ -347,8 +365,8 @@ if __name__ == "__main__":
 
             for row in pairs_parameters.itertuples():
                 tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
-                # plt.plot(tradable_pair.time, tradable_pair.z_score)
-                # plt.show()
+                plt.plot(tradable_pair.time, tradable_pair.z_score)
+                plt.show()
                 trades = simulate_trades(tradable_pair, 'M1', symbols_info, row.hedge_ratio, row.half_life_minutes, 3,
                                          2, 0.5, 3.5, 1)
                 if not trades.empty:

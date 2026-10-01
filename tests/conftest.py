@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from src.data.sqlite_db import SQLiteDB
-from src.data.market_session import get_session_prices, get_trading_dates
+from src.data.market_session import get_session_data, get_trading_dates
 from datetime import date
 
 
@@ -53,7 +53,8 @@ def sim_db(tmp_path) -> SQLiteDB:
 @pytest.fixture
 def sim_close_prices(sim_db : SQLiteDB) -> pd.DataFrame:
     symbols = ['first_i1', 'second_i1', 'indep_i1', 'stationary']
-    sim_close_prices = get_session_prices(sim_db, symbols, 'M1', date(2026, 8, 3))
+    sim_data = get_session_data(sim_db, symbols, 'M1', date(2026, 8, 3))
+    sim_close_prices = sim_data['close']
 
     return sim_close_prices
 
