@@ -41,13 +41,13 @@ def backtest_period(
         opening_minutes: int = 90,
         global_fdr_level: float = 0.1,
         local_fdr_level: float = 0.05,
-) -> pd.DataFrame:
+) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     trading_dates = get_trading_dates(start_date, end_date)
     symbols_info = db.load_symbols()
 
     trades = []
-    daily_results = dict()
+    daily_results = []
 
     for session in tqdm(trading_dates, desc = 'Backtest sessions'):
         session_trades = backtest_session(
@@ -76,7 +76,7 @@ def backtest_period(
             daily_pnl = session_trades['net_pnl'].sum()
             trades.append(session_trades)
 
-        daily_results = (
+        daily_results.append(
             {
                 'session_date': session,
                 'trades_count': len(session_trades),
@@ -89,7 +89,7 @@ def backtest_period(
         trades = trades.sort_values('entry_time').reset_index(drop = True)
     else: trades =  pd.DataFrame()
 
-    daily_results = pd.DataFrame(daily_results)
+    daily_results = pd.DataFrame(daily_results, columns = ['session_date', 'trades_count', 'net_pnl'])
 
     return daily_results, trades
 
