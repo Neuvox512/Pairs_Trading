@@ -86,6 +86,8 @@ def backtest_period(
     if sessions_history:
         period_history = pd.concat(sessions_history, ignore_index=True)
         period_history = period_history.sort_values(['session_date', 'time']).reset_index(drop=True)
+    else: period_history = pd.DataFrame()
+
     sessions = pd.DataFrame(sessions, columns=["session_date", "market_open", "market_close", "timeframe"])
 
     return period_history, sessions
@@ -124,11 +126,13 @@ def backtest_session(
         global_fdr_level,
         local_fdr_level)
 
-    if pairs_parameters.empty: return pd.DataFrame()
+    if pairs_parameters.empty:
+        return pd.DataFrame()
 
     tradable_data = get_tradable_data(db,pairs_parameters, session_date, timeframe, opening_minutes)
 
-    if tradable_data.empty: return pd.DataFrame()
+    if tradable_data.empty:
+        raise ValueError(f"No tradable data for selected pairs on {session_date}")
 
     tradable_pairs_history = []
 
