@@ -1,9 +1,7 @@
 from datetime import date
 import pandas as pd
 from src.data.timeframes import TIME_FREQUENCIES
-from src.analysis.liquidity_filtration import (
-    filter_symbols_by_liquidity,
-    get_liquidity_params_quantiles)
+from src.analysis.liquidity_filtration import filter_symbols_by_liquidity, get_liquidity_params_quantiles
 from src.analysis.pairs_parameters_calculation import calculate_pair_spread, calculate_pair_spread_z_score
 from src.data.sqlite_db import SQLiteDB
 from src.data.market_session import (
@@ -133,26 +131,36 @@ def backtest_session(
 
     if tradable_data.empty: return pd.DataFrame()
 
-    daily_trades = []
+    tradable_pairs_history = []
 
     for pair in pairs_parameters.itertuples():
         tradable_pairs_data = tradable_data[
             (tradable_data['symbol_1'] == pair.first_symbol) & (tradable_data['symbol_2'] == pair.second_symbol)
         ]
 
-        trades = simulate_trades(tradable_pairs_data, timeframe, symbols_info, pair.hedge_ratio, pair.half_life_minutes,
-                                 half_life_multiplier, entry_z_score, exit_z_score, acceptable_z_score, base_lot)
+        tradable_pair_history = simulate_trades(
+            tradable_pairs_data,
+            timeframe,
+            symbols_info,
+            pair.hedge_ratio,
+            pair.half_life_minutes,
+            half_life_multiplier,
+            entry_z_score,
+            exit_z_score,
+            acceptable_z_score,
+            base_lot)
 
-        if not trades.empty:
-            trades['session_date'] = session_date
-            daily_trades.append(trades)
+        if not tradable_pair_history.empty:
+            tradable_pairs_history.append(tradable_pair_history)
 
-    if not daily_trades:
+    if not tradable_pairs_history:
         return pd.DataFrame()
 
-    return pd.concat(daily_trades, ignore_index=True).sort_values('entry_time').reset_index(drop = True)
+    session_bt_history = pd.concat(tradable_pairs_history, ignore_index=True)
+    session_bt_history['session_date'] = session_date
+    session_bt_history = session_bt_history.sort_values('time').reset_index(drop = True)
 
-
+    return session_bt_history
 
 
 def simulate_trades(
@@ -204,14 +212,14 @@ def simulate_trades(
     trading_enabled = True
     tradable_pair_history = []
 
-    for i in range(1, len(prices)):
+    for i in range(len(prices)):
         current_bar = prices.iloc[i]
         current_time = current_bar.time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
 
         bid_1 = current_bar.symbol_1_close
-        ask_1 = bid_1 + current_bar.spread * symbol_1_info.point
+        ask_1 = bid_1 + current_bar.symbol_1_spread * symbol_1_info.point
         bid_2 = current_bar.symbol_2_close
-        ask_2 = bid_2  + current_bar.spread * symbol_2_info.point
+        ask_2 = bid_2  + current_bar.symbol_2_spread * symbol_2_info.point
 
         if i > 0:
             signal_z_score = prices.iloc[i-1].z_score
@@ -239,9 +247,10 @@ def simulate_trades(
             elif trading_enabled and i<last_bar and abs(signal_z_score) < acceptable_z_score:
                 if signal_z_score > entry_z_score:
                     direction = -1
+                    entry_time = current_time
                 elif signal_z_score < -entry_z_score:
                     direction = 1
-                entry_time = current_time
+                    entry_time = current_time
 
         quantity_1 = direction * lot_1 * symbol_1_info.contract_size
         if hedge_ratio > 0:
