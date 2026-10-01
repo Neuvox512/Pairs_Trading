@@ -44,6 +44,7 @@ def backtest_period(
     trading_dates = get_trading_dates(start_date, end_date)
     symbols_info = db.load_symbols()
 
+    sessions = []
     sessions_history = []
 
     for session in tqdm(trading_dates, desc = 'Backtest sessions'):
@@ -70,10 +71,24 @@ def backtest_period(
         if not session_bt_history.empty:
             sessions_history.append(session_bt_history)
 
-    if session_bt_history:
-        period_history = pd.concat(sessions_history, ignore_index=True)
+        market_open, last_bar_time = get_full_session_bar_range(session, timeframe)
+        market_close = last_bar_time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
 
-    return period_history.sort_values(['session_date', 'time']).reset_index(drop=True)
+        sessions.append(
+            {
+                "session_date": session,
+                "market_open": market_open,
+                "market_close": market_close,
+                "timeframe": timeframe,
+            }
+        )
+
+    if sessions_history:
+        period_history = pd.concat(sessions_history, ignore_index=True)
+        period_history = period_history.sort_values(['session_date', 'time']).reset_index(drop=True)
+    sessions = pd.DataFrame(sessions, columns=["session_date", "market_open", "market_close", "timeframe"])
+
+    return period_history, sessions
 
 
 def backtest_session(
@@ -261,114 +276,6 @@ def simulate_trades(
 
     return pd.DataFrame(tradable_pair_history)
 
-    #     if direction == 0:
-    #         if i == last_bar:
-    #             continue
-    #
-    #         if abs(signal_z_score) >= acceptable_z_score:
-    #             continue
-    #
-    #         # SELL Spread
-    #         if signal_z_score > entry_z_score:
-    #             direction = -1
-    #             entry_price_1 = current_bar.symbol_1_close
-    #             quantity_1 = direction * lot_1 * symbol_1_info.contract_size
-    #             if hedge_ratio > 0:
-    #                 entry_price_2 = current_bar.symbol_2_close + spread_price_2
-    #                 quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
-    #             elif hedge_ratio < 0:
-    #                 entry_price_2 = current_bar.symbol_2_close
-    #                 quantity_2 = direction * lot_2 * symbol_2_info.contract_size
-    #
-    #         # BUY Spread
-    #         elif signal_z_score < -entry_z_score:
-    #             direction = 1
-    #             entry_price_1 = current_bar.symbol_1_close + spread_price_1
-    #             quantity_1 = direction * lot_1 * symbol_1_info.contract_size
-    #             if hedge_ratio > 0:
-    #                 entry_price_2 = current_bar.symbol_2_close
-    #                 quantity_2 = -direction * lot_2 * symbol_2_info.contract_size
-    #             elif hedge_ratio < 0:
-    #                 entry_price_2 = current_bar.symbol_2_close + spread_price_2
-    #                 quantity_2 = direction * lot_2 * symbol_2_info.contract_size
-    #
-    #         else: continue
-    #
-    #         entry_time = current_time
-    #
-    #         continue
-    #
-    #     time_passed = (current_time - entry_time).total_seconds() / 60
-    #
-    #     if (
-    #         (direction == 1 and signal_z_score <= -acceptable_z_score)
-    #         or
-    #         (direction == -1 and signal_z_score >= acceptable_z_score)
-    #     ):
-    #         exit_reason = 'max_accepted_z_score'
-    #
-    #     elif i == last_bar:
-    #         exit_reason = 'session_end'
-    #
-    #     elif time_passed >= stop_loss_time:
-    #         exit_reason = 'time_stop_loss'
-    #
-    #     elif (
-    #             (direction == 1 and signal_z_score > -exit_z_score)
-    #             or
-    #             (direction == -1 and signal_z_score < exit_z_score)
-    #     ):
-    #         exit_reason = 'mean revertion'
-    #
-    #     else: continue
-    #
-    #     # closing position
-    #     exit_time = current_time
-    #
-    #     if quantity_1 < 0:
-    #         exit_price_1 = current_bar.symbol_1_close + spread_price_1
-    #     elif quantity_1 > 0:
-    #         exit_price_1 = current_bar.symbol_1_close
-    #
-    #     if quantity_2 < 0:
-    #         exit_price_2 = current_bar.symbol_2_close + spread_price_2
-    #     elif quantity_2 > 0:
-    #         exit_price_2 = current_bar.symbol_2_close
-    #
-    #     net_pnl_1 = quantity_1 * (exit_price_1 - entry_price_1)
-    #     net_pnl_2 = quantity_2 * (exit_price_2 - entry_price_2)
-    #     net_pnl = net_pnl_1 + net_pnl_2
-    #
-    #     trades.append(
-    #         {
-    #             'symbol_1' : current_bar.symbol_1,
-    #             'symbol_2' : current_bar.symbol_2,
-    #             'timeframe' : timeframe,
-    #             'direction' : direction,
-    #             'entry_time' : entry_time,
-    #             'exit_time' : exit_time,
-    #             'entry_price_1' : entry_price_1,
-    #             'exit_price_1' : exit_price_1,
-    #             'entry_price_2' : entry_price_2,
-    #             'exit_price_2' : exit_price_2,
-    #             'holding_time_(min)' : time_passed,
-    #             'quantity_1' : quantity_1,
-    #             'quantity_2' : quantity_2,
-    #             'net_pnl_1' : net_pnl_1,
-    #             'net_pnl_2' : net_pnl_2,
-    #             'net_pnl' : net_pnl,
-    #             'exit_reason' : exit_reason
-    #         }
-    #     )
-    #
-    #     direction = 0
-    #     entry_time = None
-    #
-    #     if exit_reason == 'max_accepted_z_score':
-    #         break
-    #
-    # return pd.DataFrame(trades)
-
 
 def get_tradable_data(
         db: SQLiteDB,
@@ -460,51 +367,3 @@ def prepare_trading_day(
         db, global_candidate_pairs, timeframe, session_date, opening_minutes, local_fdr_level)
 
     return get_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
-
-
-if __name__ == "__main__":
-    from pathlib import Path
-    from time import perf_counter
-    from src.config import SQLITE_DB_PATH
-
-    db_path = Path(SQLITE_DB_PATH)
-
-    if not db_path.is_file():
-        raise FileNotFoundError(f"Database not found: {db_path}")
-
-    count = []
-    db = SQLiteDB(db_path)
-    symbols_info = db.load_symbols()
-
-    results = []
-    for i in range(1,29):
-        try:
-            session_date = date(2026, 3, 7-i)
-            timeframe = "M1"
-            pairs_parameters = prepare_trading_day(
-                db=db,
-                session_date=session_date,
-                timeframe=timeframe,
-                liquidity_sessions=10,
-                coint_sessions=1,
-                min_coverage_quantile=0.75,
-                min_tick_volume_quantile=0.75,
-                max_spread_quantile=0.25,
-                global_fdr_level= 0.05,
-                local_fdr_level=0.05)
-            tradable_data = get_tradable_data(db, pairs_parameters, session_date, timeframe, 90)
-            # print(tradable_data)
-
-            for row in pairs_parameters.itertuples():
-                tradable_pair = tradable_data[tradable_data['symbol_1'].eq(row.first_symbol) & tradable_data['symbol_2'].eq(row.second_symbol)]
-                plt.plot(tradable_pair.time, tradable_pair.z_score)
-                plt.show()
-                trades = simulate_trades(tradable_pair, 'M1', symbols_info, row.hedge_ratio, row.half_life_minutes, 3,
-                                         2, 0.5, 3.5, 1)
-                if not trades.empty:
-                    sum_pnl = trades['gross_pnl'].sum()
-                    results.append(sum_pnl)
-        except Exception as e: print(e)
-        print(sum(results))
-    total_pnl = sum(results)
-    print(total_pnl)
