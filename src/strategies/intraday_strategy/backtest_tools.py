@@ -1,7 +1,5 @@
 from datetime import date
 import pandas as pd
-from fontTools.misc.fixedTools import floatToFixed
-
 from src.data.timeframes import TIME_FREQUENCIES
 from src.analysis.liquidity_filtration import filter_symbols_by_liquidity, get_liquidity_params_quantiles
 from src.analysis.pairs_parameters_calculation import calculate_pair_spread, calculate_pair_spread_z_score
@@ -55,7 +53,7 @@ def backtest_period(
         opening_minutes: int = 90,
         global_fdr_level: float = 0.1,
         local_fdr_level: float = 0.05,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+) -> pd.DataFrame:
 
     trading_dates = get_trading_dates(start_date, end_date)
     symbols_info = db.load_symbols()
@@ -87,26 +85,28 @@ def backtest_period(
         if not session_bt_history.empty:
             sessions_history.append(session_bt_history)
 
-        market_open, last_bar_time = get_full_session_bar_range(session, timeframe)
-        market_close = last_bar_time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
-
-        sessions.append(
-            {
-                "session_date": session,
-                "market_open": market_open,
-                "market_close": market_close,
-                "timeframe": timeframe,
-            }
-        )
-
     if sessions_history:
         period_history = pd.concat(sessions_history, ignore_index=True)
         period_history = period_history.sort_values(['session_date', 'time']).reset_index(drop=True)
     else: period_history = pd.DataFrame()
 
-    sessions = pd.DataFrame(sessions, columns=["session_date", "market_open", "market_close", "timeframe"])
 
-    return period_history, sessions
+    #     market_open, last_bar_time = get_full_session_bar_range(session, timeframe)
+    #     market_close = last_bar_time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
+    #
+    #     sessions.append(
+    #         {
+    #             "session_date": session,
+    #             "market_open": market_open,
+    #             "market_close": market_close,
+    #             "timeframe": timeframe,
+    #         }
+    #     )
+    #
+    #
+    # sessions = pd.DataFrame(sessions, columns=["session_date", "market_open", "market_close", "timeframe"])
+
+    return period_history
 
 
 def backtest_session(
@@ -244,8 +244,10 @@ def simulate_trades(
         ask_2 = bid_2  + current_bar.symbol_2_spread * symbol_2_info.point
 
         if direction != 0:
-            closing_price_1 = bid_1 if quantity_1 < 0 else ask_1
-            closing_price_2 = bid_2 if quantity_2 < 0 else ask_2
+            closing_price_1 = bid_1 if quantity_1 > 0 else ask_1
+            closing_price_2 = bid_2 if quantity_2 > 0 else ask_2
+
+            unrealized_pnl = quantity_1*(closing_price_1 - entry_price_1) - quantity_2*(closing_price_2-entry_price_2)
 
 
         if i > 0:
@@ -268,7 +270,8 @@ def simulate_trades(
 
                 if stop_by_mean_revertion or stop_by_acceptable_z_score or time_stop or session_end:
                     direction = 0
-                    realized_pnl = realized_pnl + ()
+                    realized_pnl += unrealized_pnl
+                    unrealized_pnl = 0
                     entry_time = None
                     if stop_by_acceptable_z_score: trading_enabled = False
 
@@ -276,6 +279,7 @@ def simulate_trades(
                 if signal_z_score > entry_z_score:
                     direction = -1
                     entry_price_1 = bid_1
+                    entry_time = current_time
                     if hedge_ratio > 0:
                         entry_price_2 = ask_2
                     else: entry_price_2 = bid_2
@@ -283,27 +287,16 @@ def simulate_trades(
                 elif signal_z_score < -entry_z_score:
                     direction = 1
                     entry_price_1 = ask_1
+                    entry_time = current_time
                     if hedge_ratio > 0:
                         entry_price_2 = bid_2
                     else: entry_price_2 = ask_2
-
-                entry_time = current_time
 
         quantity_1 = direction * lot_1 * symbol_1_info.contract_size
         if hedge_ratio > 0:
             quantity_2 = -direction * lot_2 * contract_size_2
         else:
             quantity_2 = direction * lot_2 * contract_size_2
-
-        # if quantity_1 < 0 and quantity_2 < 0:
-        #     unrealized_pnl = quantity_1 * (entry_price_1 - ask_1) + quantity_2 * (entry_price_2 - ask_2)
-        # elif quantity_1 < 0 and quantity_2 > 0:
-        #     unrealized_pnl = quantity_1 * (entry_price_1 - ask_1) + quantity_2 * (entry_price_2 - bid_2)
-        # elif quantity_1 > 0 and quantity_2 < 0:
-        #     unrealized_pnl = quantity_1 * (entry_price_1 - bid_1) + quantity_2 * (entry_price_2 - ask_2)
-        # elif quantity_1 > 0 and quantity_2 > 0:
-        #     unrealized_pnl = quantity_1 * (entry_price_1 - bid_1) + quantity_2 * (entry_price_2 - bid_2)
-        # else: unrealized_pnl = 0
 
         tradable_pair_history.append(
             {
