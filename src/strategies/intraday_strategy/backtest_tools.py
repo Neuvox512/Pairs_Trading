@@ -34,7 +34,7 @@ def calculate_pnl(period_history : pd.DataFrame, start_date : date, end_date : d
     )
     sessions_and_times = get_sessions_and_bars(start_date, end_date, timeframe)
 
-    pnl_history = sessions_and_times.merge(pnl_history, on=['session_date','time'], how='left')
+    pnl_history = sessions_and_times.merge(pnl_history, on='time', how='left')
 
     return pnl_history
 
@@ -93,22 +93,6 @@ def backtest_period(
         period_history = pd.concat(sessions_history, ignore_index=True)
         period_history = period_history.sort_values(['session_date', 'time']).reset_index(drop=True)
     else: period_history = pd.DataFrame()
-
-
-    #     market_open, last_bar_time = get_full_session_bar_range(session, timeframe)
-    #     market_close = last_bar_time + pd.Timedelta(TIME_FREQUENCIES[timeframe])
-    #
-    #     sessions.append(
-    #         {
-    #             "session_date": session,
-    #             "market_open": market_open,
-    #             "market_close": market_close,
-    #             "timeframe": timeframe,
-    #         }
-    #     )
-    #
-    #
-    # sessions = pd.DataFrame(sessions, columns=["session_date", "market_open", "market_close", "timeframe"])
 
     return period_history
 
@@ -228,7 +212,7 @@ def simulate_trades(
     if lot_2 is None:
         return pd.DataFrame()
     stop_loss_time = half_life_minutes * half_life_multiplier
-    last_bar = len(prices) - 1
+    last_bar = len(prices) - 2
 
     direction = 0
     unrealized_pnl, realized_pnl = 0, 0
