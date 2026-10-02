@@ -286,7 +286,7 @@ def simulate_trades(
 
         tradable_pair_history.append(
             {
-                "time": current_time,
+                "time": current_bar.time,
                 "symbol_1": symbol_1,
                 "symbol_2": symbol_2,
                 "timeframe": timeframe,

@@ -25,15 +25,15 @@ if __name__ == '__main__':
         10,
         1,
         0.9,
-        0.9,
+        0.75,
         0.25,
         90,
         0.1,
         0.05,
     )
-    # backtest_history.to_csv('backtest.csv', index=False)
+    backtest_history.to_csv('backtest.csv', index=False)
     # backtest = pd.read_csv('backtest.csv')
     print(backtest_history)
     pnl = calculate_pnl(backtest_history, period_start, period_end, timeframe)
-    # pnl.to_excel('pnl.csv')
+    pnl.to_csv('pnl.csv')
     print(pnl)
