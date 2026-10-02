@@ -12,28 +12,28 @@ if __name__ == '__main__':
     period_end = date(2026, 8,26)
     timeframe = 'M1'
 
-    backtest_history = backtest_period(
-        db,
-        period_start,
-        period_end,
-        timeframe,
-        3,
-        2,
-        0.5,
-        3,
-        1,
-        10,
-        1,
-        0.9,
-        0.75,
-        0.25,
-        90,
-        0.1,
-        0.05,
-    )
-    backtest_history.to_csv('backtest.csv', index=False)
-    # backtest = pd.read_csv('backtest.csv')
-    print(backtest_history)
-    pnl = calculate_pnl(backtest_history, period_start, period_end, timeframe)
-    pnl.to_csv('pnl.csv')
+    # backtest_history = backtest_period(
+    #     db,
+    #     period_start,
+    #     period_end,
+    #     timeframe,
+    #     3,
+    #     2,
+    #     0.5,
+    #     3,
+    #     1,
+    #     10,
+    #     1,
+    #     0.9,
+    #     0.75,
+    #     0.25,
+    #     90,
+    #     0.1,
+    #     0.05,
+    # )
+    # backtest_history.to_parquet('backtest.parquet')
+    # print(backtest_history)
+    backtest = pd.read_parquet('backtest.parquet')
+    print(backtest)
+    pnl = calculate_pnl(backtest, period_start, period_end, timeframe)
     print(pnl)

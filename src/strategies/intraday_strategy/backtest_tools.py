@@ -22,19 +22,28 @@ from tqdm import tqdm
 
 
 def calculate_pnl(period_history : pd.DataFrame, start_date : date, end_date : date, timeframe : str) -> pd.DataFrame:
-    result_columns = [
-        'session_date', 'time', 'realized_pnl','unrealized_pnl', 'total_pnl'
-    ]
-    # if sessions.empty:
-    #     raise ValueError('No sessions found')
+    sessions_and_times = get_sessions_and_bars(start_date, end_date, timeframe)
+
+    if period_history.empty:
+        sessions_and_times["realized_pnl"] = 0.0
+        sessions_and_times["unrealized_pnl"] = 0.0
+        sessions_and_times["total_pnl"] = 0.0
+        return sessions_and_times
 
     pnl_history = (
         period_history.groupby(['session_date','time'])
         .agg(unrealized_pnl = ('unrealized_pnl', 'sum'), realized_pnl = ('realized_pnl', 'sum'))
+        .sort_values(['session_date', 'time'])
+        .reset_index(drop=False)
     )
-    sessions_and_times = get_sessions_and_bars(start_date, end_date, timeframe)
 
-    pnl_history = sessions_and_times.merge(pnl_history, on='time', how='left')
+    pnl_history = sessions_and_times.merge(pnl_history, on=['session_date', 'time'], how='left')
+    pnl_history = pnl_history.fillna(0)
+
+    pnl_history['total_pnl'] = (
+        pnl_history.groupby('session_date')['realized_pnl'].
+        diff().fillna(pnl_history['realized_pnl']).cumsum()
+    )
 
     return pnl_history
 
@@ -212,7 +221,7 @@ def simulate_trades(
     if lot_2 is None:
         return pd.DataFrame()
     stop_loss_time = half_life_minutes * half_life_multiplier
-    last_bar = len(prices) - 2
+    last_bar = len(prices) - 1
 
     direction = 0
     unrealized_pnl, realized_pnl = 0, 0
