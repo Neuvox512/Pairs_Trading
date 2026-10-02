@@ -21,14 +21,17 @@ from decimal import Decimal
 from tqdm import tqdm
 
 
-def calculate_pnl(period_history : pd.DataFrame, start_date : date, end_date : date, timeframe : str) -> pd.DataFrame:
+def calculate_pnl(
+        period_history : pd.DataFrame,
+        start_date : date,
+        end_date : date,
+        timeframe : str,
+        initial_equity: float,
+) -> pd.DataFrame:
     sessions_and_times = get_sessions_and_bars(start_date, end_date, timeframe)
 
     if period_history.empty:
-        sessions_and_times["realized_pnl"] = 0.0
-        sessions_and_times["unrealized_pnl"] = 0.0
-        sessions_and_times["total_pnl"] = 0.0
-        return sessions_and_times
+        raise ValueError("Period history is empty")
 
     pnl_history = (
         period_history.groupby(['session_date','time'])
@@ -44,7 +47,9 @@ def calculate_pnl(period_history : pd.DataFrame, start_date : date, end_date : d
         pnl_history.groupby('session_date')['realized_pnl'].
         diff().fillna(pnl_history['realized_pnl']).cumsum()
     )
-    pnl_history['total_pnl'] = pnl_history['realized_pnl'] + pnl_history['unrealized_pnl']
+    pnl_history['equity'] = pnl_history['realized_pnl'] + pnl_history['unrealized_pnl'] + initial_equity
+    pnl_history['balance'] = pnl_history['realized_pnl'] + initial_equity
+    pnl_history['drawdown'] = (pnl_history['equity'] - pnl_history['balance'])/pnl_history['balance'] * 100
 
     return pnl_history
 
