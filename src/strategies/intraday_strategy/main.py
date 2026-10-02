@@ -36,4 +36,4 @@ if __name__ == '__main__':
     backtest = pd.read_parquet('backtest.parquet')
     print(backtest)
     pnl = calculate_pnl(backtest, period_start, period_end, timeframe)
-    print(pnl)
+    print(pnl[['unrealized_pnl', 'realized_pnl', 'total_pnl']].tail(60))

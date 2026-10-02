@@ -40,10 +40,11 @@ def calculate_pnl(period_history : pd.DataFrame, start_date : date, end_date : d
     pnl_history = sessions_and_times.merge(pnl_history, on=['session_date', 'time'], how='left')
     pnl_history = pnl_history.fillna(0)
 
-    pnl_history['total_pnl'] = (
+    pnl_history['realized_pnl'] = (
         pnl_history.groupby('session_date')['realized_pnl'].
         diff().fillna(pnl_history['realized_pnl']).cumsum()
     )
+    pnl_history['total_pnl'] = pnl_history['realized_pnl'] + pnl_history['unrealized_pnl']
 
     return pnl_history
 
