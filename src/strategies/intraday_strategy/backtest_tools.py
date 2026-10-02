@@ -227,8 +227,9 @@ def simulate_trades(
     last_bar = len(prices) - 1
 
     direction = 0
-    unrealized_pnl = 0
-    realized_pnl = 0
+    unrealized_pnl, realized_pnl = 0, 0
+    entry_price_1, entry_price_2 = 0, 0
+    quantity_1, quantity_2 = 0, 0
     entry_time = None
     trading_enabled = True
     tradable_pair_history = []
@@ -241,6 +242,11 @@ def simulate_trades(
         ask_1 = bid_1 + current_bar.symbol_1_spread * symbol_1_info.point
         bid_2 = current_bar.symbol_2_close
         ask_2 = bid_2  + current_bar.symbol_2_spread * symbol_2_info.point
+
+        if direction != 0:
+            closing_price_1 = bid_1 if quantity_1 < 0 else ask_1
+            closing_price_2 = bid_2 if quantity_2 < 0 else ask_2
+
 
         if i > 0:
             signal_z_score = prices.iloc[i-1].z_score
@@ -262,17 +268,26 @@ def simulate_trades(
 
                 if stop_by_mean_revertion or stop_by_acceptable_z_score or time_stop or session_end:
                     direction = 0
-                    realized_pnl += unrealized_pnl
+                    realized_pnl = realized_pnl + ()
                     entry_time = None
                     if stop_by_acceptable_z_score: trading_enabled = False
 
             elif direction == 0 and trading_enabled and i<last_bar and abs(signal_z_score) < acceptable_z_score:
                 if signal_z_score > entry_z_score:
                     direction = -1
-                    entry_time = current_time
+                    entry_price_1 = bid_1
+                    if hedge_ratio > 0:
+                        entry_price_2 = ask_2
+                    else: entry_price_2 = bid_2
+
                 elif signal_z_score < -entry_z_score:
                     direction = 1
-                    entry_time = current_time
+                    entry_price_1 = ask_1
+                    if hedge_ratio > 0:
+                        entry_price_2 = bid_2
+                    else: entry_price_2 = ask_2
+
+                entry_time = current_time
 
         quantity_1 = direction * lot_1 * symbol_1_info.contract_size
         if hedge_ratio > 0:
@@ -280,15 +295,15 @@ def simulate_trades(
         else:
             quantity_2 = direction * lot_2 * contract_size_2
 
-        if quantity_1 < 0 and quantity_2 < 0:
-            unrealized_pnl = quantity_1 * ask_1 + quantity_2 * ask_2
-        elif quantity_1 < 0 and quantity_2 > 0:
-            unrealized_pnl = quantity_1 * ask_1 + quantity_2 * bid_2
-        elif quantity_1 > 0 and quantity_2 < 0:
-            unrealized_pnl = quantity_1 * bid_1 + quantity_2 * ask_2
-        elif quantity_1 > 0 and quantity_2 > 0:
-            unrealized_pnl = quantity_1 * bid_1 + quantity_2 * bid_2
-        else: unrealized_pnl = 0
+        # if quantity_1 < 0 and quantity_2 < 0:
+        #     unrealized_pnl = quantity_1 * (entry_price_1 - ask_1) + quantity_2 * (entry_price_2 - ask_2)
+        # elif quantity_1 < 0 and quantity_2 > 0:
+        #     unrealized_pnl = quantity_1 * (entry_price_1 - ask_1) + quantity_2 * (entry_price_2 - bid_2)
+        # elif quantity_1 > 0 and quantity_2 < 0:
+        #     unrealized_pnl = quantity_1 * (entry_price_1 - bid_1) + quantity_2 * (entry_price_2 - ask_2)
+        # elif quantity_1 > 0 and quantity_2 > 0:
+        #     unrealized_pnl = quantity_1 * (entry_price_1 - bid_1) + quantity_2 * (entry_price_2 - bid_2)
+        # else: unrealized_pnl = 0
 
         tradable_pair_history.append(
             {

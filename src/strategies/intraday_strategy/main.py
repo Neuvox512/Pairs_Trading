@@ -11,26 +11,26 @@ if __name__ == '__main__':
     period_start = date(2026, 8,25)
     period_end = date(2026, 8,26)
 
-    # backtest_history, session = backtest_period(
-    #     db,
-    #     period_start,
-    #     period_end,
-    #     'M1',
-    #     3,
-    #     2,
-    #     0.5,
-    #     3,
-    #     1,
-    #     10,
-    #     1,
-    #     0.9,
-    #     0.75,
-    #     0.25,
-    #     90,
-    #     0.1,
-    #     0.05,
-    # )
-    # backtest_history.to_csv('backtest.csv', index=False)
+    backtest_history, session = backtest_period(
+        db,
+        period_start,
+        period_end,
+        'M1',
+        3,
+        2,
+        0.5,
+        3,
+        1,
+        10,
+        1,
+        0.9,
+        0.75,
+        0.25,
+        90,
+        0.1,
+        0.05,
+    )
+    backtest_history.to_csv('backtest.csv', index=False)
     backtest = pd.read_csv('backtest.csv')
     pnl = calculcate_pnl(backtest)
     pnl.to_excel('pnl.xlsx')
