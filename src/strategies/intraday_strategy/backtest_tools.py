@@ -243,17 +243,15 @@ def simulate_trades(
         bid_2 = current_bar.symbol_2_close
         ask_2 = bid_2  + current_bar.symbol_2_spread * symbol_2_info.point
 
-        if direction != 0:
-            closing_price_1 = bid_1 if quantity_1 > 0 else ask_1
-            closing_price_2 = bid_2 if quantity_2 > 0 else ask_2
-
-            unrealized_pnl = quantity_1*(closing_price_1 - entry_price_1) - quantity_2*(closing_price_2-entry_price_2)
-
-
         if i > 0:
             signal_z_score = prices.iloc[i-1].z_score
 
             if direction != 0:
+                closing_price_1 = bid_1 if quantity_1 > 0 else ask_1
+                closing_price_2 = bid_2 if quantity_2 > 0 else ask_2
+
+                unrealized_pnl = (quantity_1 * (closing_price_1 - entry_price_1) 
+                                  + quantity_2 * (closing_price_2 - entry_price_2))
                 time_passed = (current_time - entry_time).total_seconds()/60
 
                 stop_by_acceptable_z_score = (
