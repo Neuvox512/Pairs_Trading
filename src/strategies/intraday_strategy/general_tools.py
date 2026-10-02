@@ -1,4 +1,3 @@
-import decimal
 from datetime import date
 import pandas as pd
 from src.analysis.cointegration import screen_local_pairs

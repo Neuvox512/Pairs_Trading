@@ -61,7 +61,7 @@ def get_historical_symbols_quality(
     daily_quality_results = []
     trading_dates = get_trading_dates(start_date, end_date)
 
-    for session_date in tqdm(trading_dates):
+    for session_date in tqdm(trading_dates, desc='Symbols Quality Assessment'):
         session_bar_range = get_full_session_bar_range(session_date, timeframe)
         if session_bar_range is None:
             print("No session in this date")

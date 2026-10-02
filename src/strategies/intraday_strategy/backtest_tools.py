@@ -1,5 +1,7 @@
 from datetime import date
 import pandas as pd
+from fontTools.misc.fixedTools import floatToFixed
+
 from src.data.timeframes import TIME_FREQUENCIES
 from src.analysis.liquidity_filtration import filter_symbols_by_liquidity, get_liquidity_params_quantiles
 from src.analysis.pairs_parameters_calculation import calculate_pair_spread, calculate_pair_spread_z_score
@@ -17,8 +19,22 @@ from src.strategies.intraday_strategy.general_tools import (
     get_pairs_parameters,
     standartize_lot)
 from decimal import Decimal
-from matplotlib import pyplot as plt
 from tqdm import tqdm
+
+
+def calculcate_pnl(period_history : pd.DataFrame) -> pd.DataFrame:
+    result_columns = [
+        'session_date', 'time', 'realized_pnl','unrealized_pnl', 'total_pnl'
+    ]
+    # if sessions.empty:
+    #     raise ValueError('No sessions found')
+
+    pnl_history = (
+        period_history.groupby(['session_date','time'])
+        .agg(unrealized_pnl = ('unrealized_pnl', 'sum'), realized_pnl = ('realized_pnl', 'sum'))
+    )
+
+    return pnl_history
 
 
 def backtest_period(
@@ -211,6 +227,8 @@ def simulate_trades(
     last_bar = len(prices) - 1
 
     direction = 0
+    unrealized_pnl = 0
+    realized_pnl = 0
     entry_time = None
     trading_enabled = True
     tradable_pair_history = []
@@ -244,10 +262,11 @@ def simulate_trades(
 
                 if stop_by_mean_revertion or stop_by_acceptable_z_score or time_stop or session_end:
                     direction = 0
+                    realized_pnl += unrealized_pnl
                     entry_time = None
                     if stop_by_acceptable_z_score: trading_enabled = False
 
-            elif trading_enabled and i<last_bar and abs(signal_z_score) < acceptable_z_score:
+            elif direction == 0 and trading_enabled and i<last_bar and abs(signal_z_score) < acceptable_z_score:
                 if signal_z_score > entry_z_score:
                     direction = -1
                     entry_time = current_time
@@ -261,13 +280,22 @@ def simulate_trades(
         else:
             quantity_2 = direction * lot_2 * contract_size_2
 
+        if quantity_1 < 0 and quantity_2 < 0:
+            unrealized_pnl = quantity_1 * ask_1 + quantity_2 * ask_2
+        elif quantity_1 < 0 and quantity_2 > 0:
+            unrealized_pnl = quantity_1 * ask_1 + quantity_2 * bid_2
+        elif quantity_1 > 0 and quantity_2 < 0:
+            unrealized_pnl = quantity_1 * bid_1 + quantity_2 * ask_2
+        elif quantity_1 > 0 and quantity_2 > 0:
+            unrealized_pnl = quantity_1 * bid_1 + quantity_2 * bid_2
+        else: unrealized_pnl = 0
+
         tradable_pair_history.append(
             {
                 "time": current_time,
                 "symbol_1": symbol_1,
                 "symbol_2": symbol_2,
                 "timeframe": timeframe,
-                "direction": direction,
                 "quantity_1": quantity_1,
                 "quantity_2": quantity_2,
                 "bid_1": bid_1,
@@ -275,6 +303,9 @@ def simulate_trades(
                 "bid_2": bid_2,
                 "ask_2": ask_2,
                 "z_score": current_bar.z_score,
+                "direction": direction,
+                "unrealized_pnl" : unrealized_pnl,
+                "realized_pnl" : realized_pnl,
             }
         )
 

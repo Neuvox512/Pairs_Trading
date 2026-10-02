@@ -3,7 +3,6 @@ from src.data.sqlite_db import SQLiteDB
 from datetime import date
 from src.analysis.cointegration import screen_global_pairs
 from src.data.market_session import get_trading_dates, get_session_data
-from tqdm import tqdm
 
 
 def select_candidate_pairs(historical_screening : pd.DataFrame, sessions : int = 2) -> pd.DataFrame:
@@ -31,7 +30,7 @@ def historical_screening(
     trading_dates = get_trading_dates(start_date, end_date)
     historical_data = []
 
-    for session_date in tqdm(trading_dates):
+    for session_date in trading_dates:
         market_data = get_session_data(db, symbols, timeframe, session_date)
         close_prices = market_data['close']
         coint_results = screen_global_pairs(close_prices, fdr_level)
