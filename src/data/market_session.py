@@ -70,3 +70,19 @@ def get_full_session_bar_range(session_date: date, timeframe: str) -> tuple[pd.T
     )
 
     return market_open, last_bar_time
+
+
+def get_sessions_and_bars(start_date : date, end_date : date, timeframe : str) -> pd.DataFrame:
+    sessions = get_trading_dates(start_date, end_date)
+    session_times = []
+    for session in sessions:
+        market_open, market_close = get_full_session_bar_range(session, timeframe)
+        times = pd.date_range(start=market_open, end=market_close, freq=TIME_FREQUENCIES[timeframe]).to_frame()
+        times['session_date'] = session
+        session_times.append(times)
+
+    session_and_times = pd.concat(session_times, sort=True)
+    session_and_times =session_and_times.rename(columns = {0 : 'time'})
+    session_and_times = session_and_times[['session_date', 'time']].reset_index(drop=True)
+
+    return session_and_times

@@ -8,7 +8,8 @@ from src.data.market_session import (
     get_full_session_bar_range,
     get_local_session_bar_range,
     get_session_data,
-    get_trading_dates)
+    get_trading_dates,
+    get_sessions_and_bars)
 from src.strategies.intraday_strategy.general_tools import (
     get_symbols_liquidity,
     get_strat_dates,
@@ -20,7 +21,7 @@ from decimal import Decimal
 from tqdm import tqdm
 
 
-def calculcate_pnl(period_history : pd.DataFrame) -> pd.DataFrame:
+def calculate_pnl(period_history : pd.DataFrame, start_date : date, end_date : date, timeframe : str) -> pd.DataFrame:
     result_columns = [
         'session_date', 'time', 'realized_pnl','unrealized_pnl', 'total_pnl'
     ]
@@ -31,6 +32,9 @@ def calculcate_pnl(period_history : pd.DataFrame) -> pd.DataFrame:
         period_history.groupby(['session_date','time'])
         .agg(unrealized_pnl = ('unrealized_pnl', 'sum'), realized_pnl = ('realized_pnl', 'sum'))
     )
+    sessions_and_times = get_sessions_and_bars(start_date, end_date, timeframe)
+
+    pnl_history = sessions_and_times.merge(pnl_history, on=['session_date','time'], how='left')
 
     return pnl_history
 
@@ -250,7 +254,7 @@ def simulate_trades(
                 closing_price_1 = bid_1 if quantity_1 > 0 else ask_1
                 closing_price_2 = bid_2 if quantity_2 > 0 else ask_2
 
-                unrealized_pnl = (quantity_1 * (closing_price_1 - entry_price_1) 
+                unrealized_pnl = (quantity_1 * (closing_price_1 - entry_price_1)
                                   + quantity_2 * (closing_price_2 - entry_price_2))
                 time_passed = (current_time - entry_time).total_seconds()/60
 

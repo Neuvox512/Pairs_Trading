@@ -1,11 +1,24 @@
-from datetime import date
+from datetime import date, datetime
 import pandas as pd
 from src.data.market_session import (
     get_trading_dates,
     get_full_session_bar_range,
     get_previous_trading_dates,
     get_local_session_bar_range,
-    get_session_data)
+    get_session_data,
+    get_sessions_and_bars)
+
+
+def test_get_sessions_and_bars() -> None:
+    start = date(2026,8,26)
+    end = date(2026,8,27)
+    timeframe = 'M1'
+
+    sessions_and_bars = get_sessions_and_bars(start, end, timeframe)
+
+    assert len(sessions_and_bars) == 780
+    assert sessions_and_bars['time'].iloc[0] == pd.Timestamp('2026-08-26 13:30:00+0000', tz='UTC')
+    assert sessions_and_bars['time'].iloc[-1] == pd.Timestamp('2026-08-27 19:59:00+0000', tz='UTC')
 
 
 def test_get_session_data(sim_db) -> None:
