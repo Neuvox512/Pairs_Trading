@@ -29,11 +29,11 @@ def pnl_summary(calculated_pnl : pd.DataFrame, year_risk_free_rate : float) -> p
     pnl_std = calculated_pnl['drawdown'].std()
     risk_free_rate = year_risk_free_rate / 252 * trading_days
 
-    avg_daily_pnl = (
+    daily_changes = (
             calculated_pnl.groupby('session_date')
-            .agg(daily_pnl = ('equity', 'last')) - start_balance
-    ).values.mean()
-
+            .agg(session_start_equity = ('equity', 'first'), session_end_equity = ('equity', 'last'))
+    )
+    avg_daily_pnl = (daily_changes['session_end_equity'] - daily_changes['session_start_equity']).values.mean()
 
     summary = pd.Series(
         {
