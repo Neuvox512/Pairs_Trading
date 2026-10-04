@@ -22,24 +22,27 @@ from tqdm import tqdm
 
 
 def pnl_summary(calculated_pnl : pd.DataFrame, year_risk_free_rate : float) -> pd.Series:
-    if calculated_pnl.empty:
-        raise ValueError("Calculated PNL summary is empty")
-
     trading_days = calculated_pnl['session_date'].nunique()
     start_balance = calculated_pnl['balance'].iloc[0]
     result_balance = calculated_pnl['balance'].iloc[-1]
     pnl_pct = (result_balance-start_balance)/start_balance * 100
     pnl_std = calculated_pnl['drawdown'].std()
-    risk_free_rate = 4 / 252 * trading_days
+    risk_free_rate = year_risk_free_rate / 252 * trading_days
+
+    avg_daily_pnl = (
+            calculated_pnl.groupby('session_date')
+            .agg(daily_pnl = ('equity', 'last')) - start_balance
+    ).values.mean()
+
 
     summary = pd.Series(
         {
             'period_start' : calculated_pnl['session_date'].min(),
             'period_end' : calculated_pnl['session_date'].max(),
             'trading_days' : trading_days,
-            'max_drawdown_pct' : calculated_pnl['drawdown'].min(),
+            'max_drawdown_pct' : calculated_pnl['drawdown'].max(),
             'pnl_pct' : pnl_pct,
-            'Sharpe_ratio' : (pnl_pct - risk_free_rate)/pnl_std
+            'Sharpe_ratio' : (avg_daily_pnl - risk_free_rate)/pnl_std
         }
     )
 
@@ -51,7 +54,7 @@ def calculate_pnl(
         start_date : date,
         end_date : date,
         timeframe : str,
-        initial_equity: float,
+        initial_balance: float,
 ) -> pd.DataFrame:
     sessions_and_times = get_sessions_and_bars(start_date, end_date, timeframe)
 
@@ -72,9 +75,9 @@ def calculate_pnl(
         pnl_history.groupby('session_date')['realized_pnl'].
         diff().fillna(pnl_history['realized_pnl']).cumsum()
     )
-    pnl_history['equity'] = pnl_history['realized_pnl'] + pnl_history['unrealized_pnl'] + initial_equity
-    pnl_history['balance'] = pnl_history['realized_pnl'] + initial_equity
-    pnl_history['drawdown'] = (pnl_history['equity'] - pnl_history['balance'])/pnl_history['balance'] * 100
+    pnl_history['equity'] = pnl_history['realized_pnl'] + pnl_history['unrealized_pnl'] + initial_balance
+    pnl_history['balance'] = pnl_history['realized_pnl'] + initial_balance
+    pnl_history['drawdown'] = (pnl_history['equity'].cummax() - pnl_history['equity'])/pnl_history['equity'].cummax() * 100
 
     return pnl_history
 
