@@ -21,6 +21,31 @@ from decimal import Decimal
 from tqdm import tqdm
 
 
+def pnl_summary(calculated_pnl : pd.DataFrame, year_risk_free_rate : float) -> pd.Series:
+    if calculated_pnl.empty:
+        raise ValueError("Calculated PNL summary is empty")
+
+    trading_days = calculated_pnl['session_date'].nunique()
+    start_balance = calculated_pnl['balance'].iloc[0]
+    result_balance = calculated_pnl['balance'].iloc[-1]
+    pnl_pct = (result_balance-start_balance)/start_balance * 100
+    pnl_std = calculated_pnl['drawdown'].std()
+    risk_free_rate = 4 / 252 * trading_days
+
+    summary = pd.Series(
+        {
+            'period_start' : calculated_pnl['session_date'].min(),
+            'period_end' : calculated_pnl['session_date'].max(),
+            'trading_days' : trading_days,
+            'max_drawdown_pct' : calculated_pnl['drawdown'].min(),
+            'pnl_pct' : pnl_pct,
+            'Sharpe_ratio' : (pnl_pct - risk_free_rate)/pnl_std
+        }
+    )
+
+    return summary
+
+
 def calculate_pnl(
         period_history : pd.DataFrame,
         start_date : date,

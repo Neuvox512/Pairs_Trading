@@ -1,9 +1,9 @@
-from backtest_tools import backtest_period, calculate_pnl
 from datetime import date
 from src.data.sqlite_db import SQLiteDB
 from src.config import SQLITE_DB_PATH
 from pathlib import Path
 import pandas as pd
+from src.strategies.intraday_strategy.backtest_tools import pnl_summary, backtest_period, calculate_pnl
 
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
@@ -34,6 +34,8 @@ if __name__ == '__main__':
     # backtest_history.to_parquet('backtest.parquet')
     # print(backtest_history)
     backtest = pd.read_parquet('backtest.parquet')
-    print(backtest)
+    # print(backtest)
     pnl = calculate_pnl(backtest, period_start, period_end, timeframe, 100)
-    print(pnl[['equity', 'balance', 'drawdown']].tail(60))
+    # print(pnl[['equity', 'balance', 'drawdown']].tail(60))
+    pnl_summary = pnl_summary(pnl, 0)
+    print(pnl_summary)
