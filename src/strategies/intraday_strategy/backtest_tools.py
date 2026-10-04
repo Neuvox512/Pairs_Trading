@@ -26,18 +26,20 @@ def pnl_summary(calculated_pnl : pd.DataFrame, year_risk_free_rate : float) -> p
     start_balance = calculated_pnl['balance'].iloc[0]
     result_balance = calculated_pnl['balance'].iloc[-1]
     pnl_pct = (result_balance-start_balance)/start_balance * 100
-    pnl_std = calculated_pnl['drawdown'].std()
-    risk_free_rate = year_risk_free_rate / 252 * trading_days
+    risk_free_rate = year_risk_free_rate / 252
 
     daily_changes = (
             calculated_pnl.groupby('session_date')
             .agg(session_start_equity = ('equity', 'first'), session_end_equity = ('equity', 'last'))
     )
-    daily_changes['daily_pnl'] = (
-            daily_changes['session_end_equity'] - daily_changes['session_start_equity']
+    daily_changes['daily_pnl_pct'] = (
+            (daily_changes['session_end_equity'] - daily_changes['session_start_equity']
+             ) / daily_changes['session_start_equity'] * 100
     )
-    avg_daily_pnl = daily_changes['daily_pnl'].values.mean()
-    daily_pnl_std = daily_changes['daily_pnl'].std()
+    avg_daily_pnl = daily_changes['daily_pnl_pct'].values.mean()
+    daily_pnl_std = daily_changes['daily_pnl_pct'].std()
+    daily_sharpe = (avg_daily_pnl - risk_free_rate)/daily_pnl_std
+    annualized_daily_sharpe = daily_sharpe * (252**0.5)
 
     summary = pd.Series(
         {
@@ -46,7 +48,7 @@ def pnl_summary(calculated_pnl : pd.DataFrame, year_risk_free_rate : float) -> p
             'trading_days' : trading_days,
             'max_drawdown_pct' : calculated_pnl['drawdown'].max(),
             'pnl_pct' : pnl_pct,
-            'Sharpe_ratio' : (avg_daily_pnl - risk_free_rate)/daily_pnl_std
+            'annualized_sharpe_ratio' : annualized_daily_sharpe
         }
     )
 
