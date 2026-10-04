@@ -4,7 +4,7 @@ from src.strategies.intraday_strategy.general_tools import (
     get_strat_dates,
     confirm_local_candidate_pairs,
     get_local_prices,
-    get_pairs_parameters)
+    get_global_pairs_parameters)
 
 
 def test_get_pairs_parameters(sim_db) -> None:
@@ -17,7 +17,7 @@ def test_get_pairs_parameters(sim_db) -> None:
     timeframe = "M1"
     coint_dates = [date(2026, 8, 3),date(2026, 8, 4)]
 
-    params = get_pairs_parameters(sim_db, confirmed_pairs, timeframe, coint_dates)
+    params = get_global_pairs_parameters(sim_db, confirmed_pairs, timeframe, coint_dates)
 
     assert len(params) == 2
 

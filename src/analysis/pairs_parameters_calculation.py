@@ -4,7 +4,7 @@ import numpy as np
 from src.data.timeframes import TIME_MINUTES
 
 
-def calculate_global_pairs_parameters(
+def calculate_pairs_parameters(
         pair_prices : pd.DataFrame,
         pairs : pd.DataFrame,
         timeframe : str

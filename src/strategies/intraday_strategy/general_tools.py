@@ -6,7 +6,7 @@ from src.analysis.liquidity_filtration import (
 from src.data.sqlite_db import SQLiteDB
 from src.analysis.pairs_selection import historical_screening, select_candidate_pairs
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
-from src.analysis.pairs_parameters_calculation import calculate_global_pairs_parameters
+from src.analysis.pairs_parameters_calculation import calculate_pairs_parameters, calculate_pair_spread
 from src.data.market_session import get_session_data
 from decimal import Decimal
 
@@ -24,7 +24,42 @@ def standartize_lot(lot : float | Decimal, symbols_info : pd.Series) -> float | 
     return float(lot)
 
 
-def get_pairs_parameters(
+def filter_morning_pairs_by_z_score(
+        global_pairs_parameters : pd.DataFrame,
+        local_prices : pd.DataFrame,
+        max_abs_morning_mean : float,
+        max_abs_last_morning_z : float
+) -> pd.DataFrame:
+
+    filtered_pairs = global_pairs_parameters
+
+    local_z_score_means = []
+    last_local_z_score = []
+
+    for pair in filtered_pairs.itertuples():
+        morning_spread = calculate_pair_spread(
+            local_prices,
+            pair.first_symbol,
+            pair.second_symbol,
+            pair.intercept,
+            pair.hedge_ratio,
+        )
+
+        local_z_score_means.append(morning_spread.mean())
+        last_local_z_score.append(morning_spread.iloc[-1])
+
+    filtered_pairs['local_z_score_mean'] = local_z_score_means
+    filtered_pairs['last_local_z_score'] = last_local_z_score
+
+    filtered_pairs = filtered_pairs[
+        (filtered_pairs['local_z_score_mean'] <= max_abs_morning_mean)
+        & (filtered_pairs['last_local_z_score'] <= max_abs_last_morning_z)
+    ]
+
+    return filtered_pairs
+
+
+def get_global_pairs_parameters(
         db : SQLiteDB,
         confirmed_pairs : pd.DataFrame,
         timeframe : str,
@@ -44,24 +79,19 @@ def get_pairs_parameters(
 
     historical_prices = pd.concat(history)
 
-    parameters = calculate_global_pairs_parameters(historical_prices, confirmed_pairs, timeframe)
+    parameters = calculate_pairs_parameters(historical_prices, confirmed_pairs, timeframe)
 
     return parameters
 
 
 def confirm_local_candidate_pairs (
-        db : SQLiteDB,
         candidate_pairs : pd.DataFrame,
-        timeframe : str,
-        session_date : date,
-        opening_minutes : int = 90,
+        local_prices : pd.DataFrame,
         fdr_level : float = 0.1
 ) -> pd.DataFrame:
 
-    candidate_symbols = list(set(candidate_pairs['first_symbol'].tolist() + candidate_pairs['second_symbol'].tolist()))
-
-    local_prices = get_local_prices(db, candidate_symbols, session_date, timeframe, opening_minutes)
     local_screening = screen_local_pairs(local_prices, candidate_pairs, fdr_level)
+
     if local_screening.empty:
         return pd.DataFrame()
 

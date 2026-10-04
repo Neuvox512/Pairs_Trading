@@ -6,13 +6,13 @@ from src.analysis.pairs_parameters_calculation import (
     calculate_pair_spread_z_score,
     calculate_pair_spread,
     calculate_spread_half_life,
-    calculate_global_pairs_parameters)
+    calculate_pairs_parameters)
 
 
 def test_calculate_pair_parameters(sim_close_prices) -> None:
     candidate_pairs = pd.DataFrame([{'first_symbol': 'first_i1', 'second_symbol': 'second_i1'}])
     timeframe = "M1"
-    params = calculate_global_pairs_parameters(sim_close_prices, candidate_pairs, timeframe)
+    params = calculate_pairs_parameters(sim_close_prices, candidate_pairs, timeframe)
 
     intercept, hedge_ratio = fit_spread_parameters(
         sim_close_prices,

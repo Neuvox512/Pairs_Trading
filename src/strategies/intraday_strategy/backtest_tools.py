@@ -15,10 +15,13 @@ from src.strategies.intraday_strategy.general_tools import (
     get_strat_dates,
     get_global_candidate_pairs,
     confirm_local_candidate_pairs,
-    get_pairs_parameters,
-    standartize_lot)
+    get_global_pairs_parameters,
+    standartize_lot,
+    get_local_prices,
+    filter_morning_pairs_by_z_score)
 from decimal import Decimal
 from tqdm import tqdm
+from matplotlib import pyplot as plt
 
 
 def pnl_summary(calculated_pnl : pd.DataFrame, year_risk_free_rate : float) -> pd.Series:
@@ -106,6 +109,8 @@ def backtest_period(
         opening_minutes: int = 90,
         global_fdr_level: float = 0.1,
         local_fdr_level: float = 0.05,
+        max_abs_local_mean: float = 1,
+        max_abs_last_local_z_score: float = 3.0,
 ) -> pd.DataFrame:
 
     trading_dates = get_trading_dates(start_date, end_date)
@@ -133,6 +138,8 @@ def backtest_period(
             opening_minutes,
             global_fdr_level,
             local_fdr_level,
+            max_abs_local_mean,
+            max_abs_last_local_z_score
         )
 
         if not session_bt_history.empty:
@@ -164,6 +171,8 @@ def backtest_session(
         opening_minutes: int = 90,
         global_fdr_level: float = 0.1,
         local_fdr_level: float = 0.05,
+        max_abs_local_mean: float = 1,
+        max_abs_last_local_z_score: float = 3.0,
 ) -> pd.DataFrame:
 
     pairs_parameters = prepare_trading_day(
@@ -177,7 +186,10 @@ def backtest_session(
         max_spread_quantile,
         opening_minutes,
         global_fdr_level,
-        local_fdr_level)
+        local_fdr_level,
+        max_abs_local_mean,
+        max_abs_last_local_z_score,
+    )
 
     if pairs_parameters.empty:
         return pd.DataFrame()
@@ -418,6 +430,8 @@ def prepare_trading_day(
         opening_minutes: int = 90,
         global_fdr_level: float = 0.1,
         local_fdr_level : float = 0.05,
+        max_abs_local_mean: float = 1,
+        max_abs_last_local_z_score: float = 3.0,
 ) -> pd.DataFrame:
 
     if get_full_session_bar_range(session_date, timeframe) is None:
@@ -441,7 +455,18 @@ def prepare_trading_day(
     if global_candidate_pairs.empty:
         return pd.DataFrame()
 
-    confirmed_pairs = confirm_local_candidate_pairs(
-        db, global_candidate_pairs, timeframe, session_date, opening_minutes, local_fdr_level)
+    global_candidate_symbols = list(
+        set(global_candidate_pairs.first_symbol.tolist() + global_candidate_pairs.second_symbol.tolist())
+    )
 
-    return get_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
+    local_prices = get_local_prices(db, global_candidate_symbols, session_date, timeframe, opening_minutes)
+
+    confirmed_pairs = confirm_local_candidate_pairs(local_prices, global_candidate_pairs, local_fdr_level)
+
+    pairs_parameters = get_global_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
+
+    pairs_filtered_by_z_score = filter_morning_pairs_by_z_score(
+        pairs_parameters, local_prices, max_abs_local_mean, max_abs_last_local_z_score
+    )
+
+    return pairs_filtered_by_z_score
