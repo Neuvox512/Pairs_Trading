@@ -6,7 +6,10 @@ from src.analysis.liquidity_filtration import (
 from src.data.sqlite_db import SQLiteDB
 from src.analysis.pairs_selection import historical_screening, select_candidate_pairs
 from src.data.market_session import get_previous_trading_dates, get_local_session_bar_range
-from src.analysis.pairs_parameters_calculation import calculate_pairs_parameters, calculate_pair_spread
+from src.analysis.pairs_parameters_calculation import (
+    calculate_pairs_parameters,
+    calculate_pair_spread,
+    calculate_pair_spread_z_score)
 from src.data.market_session import get_session_data
 from decimal import Decimal
 
@@ -24,11 +27,11 @@ def standartize_lot(lot : float | Decimal, symbols_info : pd.Series) -> float | 
     return float(lot)
 
 
-def filter_morning_pairs_by_z_score(
+def filter_local_pairs_by_z_score(
         global_pairs_parameters : pd.DataFrame,
         local_prices : pd.DataFrame,
-        max_abs_morning_mean : float,
-        max_abs_last_morning_z : float
+        max_abs_local_mean : float,
+        max_abs_last_local_z : float
 ) -> pd.DataFrame:
 
     filtered_pairs = global_pairs_parameters
@@ -37,7 +40,7 @@ def filter_morning_pairs_by_z_score(
     last_local_z_score = []
 
     for pair in filtered_pairs.itertuples():
-        morning_spread = calculate_pair_spread(
+        local_spread = calculate_pair_spread(
             local_prices,
             pair.first_symbol,
             pair.second_symbol,
@@ -45,15 +48,17 @@ def filter_morning_pairs_by_z_score(
             pair.hedge_ratio,
         )
 
-        local_z_score_means.append(morning_spread.mean())
-        last_local_z_score.append(morning_spread.iloc[-1])
+        local_z_score = calculate_pair_spread_z_score(local_spread, pair.spread_mean, pair.spread_std)
+
+        local_z_score_means.append(local_z_score.mean())
+        last_local_z_score.append(local_z_score.iloc[-1])
 
     filtered_pairs['local_z_score_mean'] = local_z_score_means
     filtered_pairs['last_local_z_score'] = last_local_z_score
 
     filtered_pairs = filtered_pairs[
-        (filtered_pairs['local_z_score_mean'] <= max_abs_morning_mean)
-        & (filtered_pairs['last_local_z_score'] <= max_abs_last_morning_z)
+        (filtered_pairs['local_z_score_mean'].abs() <= max_abs_local_mean)
+        & (filtered_pairs['last_local_z_score'].abs() <= max_abs_last_local_z)
     ]
 
     return filtered_pairs

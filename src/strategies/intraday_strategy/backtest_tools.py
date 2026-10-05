@@ -18,7 +18,7 @@ from src.strategies.intraday_strategy.general_tools import (
     get_global_pairs_parameters,
     standartize_lot,
     get_local_prices,
-    filter_morning_pairs_by_z_score)
+    filter_local_pairs_by_z_score)
 from decimal import Decimal
 from tqdm import tqdm
 from matplotlib import pyplot as plt
@@ -320,7 +320,10 @@ def simulate_trades(
                     realized_pnl += unrealized_pnl
                     unrealized_pnl = 0
                     entry_time = None
-                    if stop_by_acceptable_z_score: trading_enabled = False
+                    if stop_by_acceptable_z_score or time_stop: trading_enabled = False
+
+            elif abs(signal_z_score) <= 0.5:
+                trading_enabled = True
 
             elif direction == 0 and trading_enabled and i<last_bar and abs(signal_z_score) < acceptable_z_score:
                 if signal_z_score > entry_z_score:
@@ -461,12 +464,11 @@ def prepare_trading_day(
 
     local_prices = get_local_prices(db, global_candidate_symbols, session_date, timeframe, opening_minutes)
 
-    confirmed_pairs = confirm_local_candidate_pairs(local_prices, global_candidate_pairs, local_fdr_level)
+    confirmed_pairs = confirm_local_candidate_pairs(global_candidate_pairs, local_prices, local_fdr_level)
 
     pairs_parameters = get_global_pairs_parameters(db, confirmed_pairs, timeframe, coint_dates)
 
-    pairs_filtered_by_z_score = filter_morning_pairs_by_z_score(
-        pairs_parameters, local_prices, max_abs_local_mean, max_abs_last_local_z_score
-    )
+    pairs_filtered_by_z_score = filter_local_pairs_by_z_score(pairs_parameters, local_prices, max_abs_local_mean,
+                                                              max_abs_last_local_z_score)
 
     return pairs_filtered_by_z_score
