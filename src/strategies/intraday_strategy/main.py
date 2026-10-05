@@ -13,32 +13,33 @@ if __name__ == '__main__':
     period_end = date(2026, 6,30)
     timeframe = 'M1'
 
-    backtest_history = backtest_period(
-        db,
-        period_start,
-        period_end,
-        timeframe,
-        2,
-        1.5,
-        0.5,
-        3,
-        1,
-        10,
-        1,
-        0.9,
-        0.75,
-        0.25,
-        90,
-        0.1,
-        0.05,
-        1,
-        2.5
-    )
-    #backtest_1: half_lif 3 -> 4, z_acceptable 6-> 3
-    #backtest_2: half_life 3 -> 4, z_acceptable 6-> 3, z_entry 2->1.5, z_exit 0.5-> 0
-    backtest_history.to_parquet('backtest_6.parquet')
+    for i in range(1,6):
+        backtest_history = backtest_period(
+            db,
+            period_start,
+            period_end,
+            timeframe,
+            i,
+            1.5,
+            0.5,
+            3,
+            1,
+            10,
+            1,
+            0.9,
+            0.75,
+            0.25,
+            90,
+            0.1,
+            0.05,
+            1,
+            2.5
+        )
+        #backtest_1: half_lif 3 -> 4, z_acceptable 6-> 3
+        #backtest_2: half_life 3 -> 4, z_acceptable 6-> 3, z_entry 2->1.5, z_exit 0.5-> 0
+        backtest_history.to_parquet(f'backtest_hlm_{i}.parquet')
 
-    # backtest = pd.read_parquet('backtest_5.parquet')
+    # backtest = pd.read_parquet('backtest_6.parquet')
     #
     # pnl = calculate_pnl(backtest, period_start, period_end, timeframe, 100)
     # pnl_summary = pnl_summary(pnl, 4)
