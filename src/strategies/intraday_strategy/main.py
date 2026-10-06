@@ -20,7 +20,7 @@ if __name__ == '__main__':
         period_end,
         timeframe,
         1,
-        3,
+        2,
         1.5,
         0.5,
         6,
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     )
     #backtest_1: half_lif 3 -> 4, z_acceptable 6-> 3
     #backtest_2: half_life 3 -> 4, z_acceptable 6-> 3, z_entry 2->1.5, z_exit 0.5-> 0
-    backtest_history.to_parquet(f'backtest_month_2026.01_2026.05.parquet')
+    backtest_history.to_parquet(f'backtest_month_2026.01_2026.05_hlm_2.parquet')
 
     # backtest = pd.read_parquet('backtest_6.parquet')
     #

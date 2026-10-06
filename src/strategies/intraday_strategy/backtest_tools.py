@@ -278,7 +278,7 @@ def simulate_trades(
     if lot_2 is None:
         return pd.DataFrame()
     stop_loss_time = half_life_minutes * half_life_multiplier
-    last_bar = len(prices) - 1
+    last_bar = len(prices) - 60
 
     direction = 0
     unrealized_pnl, realized_pnl = 0, 0
