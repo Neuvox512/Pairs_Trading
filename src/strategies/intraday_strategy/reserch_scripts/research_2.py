@@ -9,8 +9,8 @@ from src.strategies.intraday_strategy.backtest_tools import *
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
-    period_start = date(2026, 6,26)
-    period_end = date(2026, 6,26)
+    period_start = date(2026, 4,23)
+    period_end = date(2026, 4,23)
     timeframe = 'M1'
 
     trading_dates = get_trading_dates(period_start, period_end)
@@ -30,10 +30,10 @@ if __name__ == '__main__':
                 90,
                 0.1,
                 0.05,
-                1,
+                0.75,
                 2.5,
         )
-
+        print(pairs_parameters[['first_symbol', 'second_symbol','half_life_minutes']])
         tradable_data = get_tradable_data(db, pairs_parameters, trading_date, timeframe, 90)
 
         for pair in pairs_parameters.itertuples():
@@ -47,10 +47,10 @@ if __name__ == '__main__':
                 symbols_info,
                 pair.hedge_ratio,
                 pair.half_life_minutes,
-                2,
+                3,
                 1.5,
                 0.5,
-                3,
+                6,
                 1)
 
             if not tradable_pair_history.empty:

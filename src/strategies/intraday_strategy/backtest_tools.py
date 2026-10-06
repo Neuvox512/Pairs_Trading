@@ -96,6 +96,7 @@ def backtest_period(
         start_date : date,
         end_date : date,
         timeframe: str,
+        min_half_life_minutes : float = 3,
         half_life_multiplier: float = 2.0,
         entry_z_score: float = 2.0,
         exit_z_score: float = 0.5,
@@ -125,6 +126,7 @@ def backtest_period(
             session,
             timeframe,
             symbols_info,
+            min_half_life_minutes,
             half_life_multiplier,
             entry_z_score,
             exit_z_score,
@@ -158,6 +160,7 @@ def backtest_session(
         session_date : date,
         timeframe: str,
         symbols_info: pd.DataFrame,
+        min_half_life_minutes: float = 3,
         half_life_multiplier: float = 2.0,
         entry_z_score: float = 2.0,
         exit_z_score: float = 0.5,
@@ -193,6 +196,8 @@ def backtest_session(
 
     if pairs_parameters.empty:
         return pd.DataFrame()
+
+    pairs_parameters = pairs_parameters[pairs_parameters["half_life_minutes"] > min_half_life_minutes]
 
     tradable_data = get_tradable_data(db,pairs_parameters, session_date, timeframe, opening_minutes)
 

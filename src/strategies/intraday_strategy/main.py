@@ -9,35 +9,36 @@ from src.strategies.intraday_strategy.backtest_tools import *
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
-    period_start = date(2026, 6,1)
-    period_end = date(2026, 6,30)
+    period_start = date(2026, 1,1)
+    period_end = date(2026,  5,31)
     timeframe = 'M1'
 
-    for i in range(1,6):
-        backtest_history = backtest_period(
-            db,
-            period_start,
-            period_end,
-            timeframe,
-            i,
-            1.5,
-            0.5,
-            3,
-            1,
-            10,
-            1,
-            0.9,
-            0.75,
-            0.25,
-            90,
-            0.1,
-            0.05,
-            1,
-            2.5
-        )
-        #backtest_1: half_lif 3 -> 4, z_acceptable 6-> 3
-        #backtest_2: half_life 3 -> 4, z_acceptable 6-> 3, z_entry 2->1.5, z_exit 0.5-> 0
-        backtest_history.to_parquet(f'backtest_hlm_{i}.parquet')
+
+    backtest_history = backtest_period(
+        db,
+        period_start,
+        period_end,
+        timeframe,
+        1,
+        3,
+        1.5,
+        0.5,
+        6,
+        1,
+        10,
+        1,
+        0.9,
+        0.75,
+        0.25,
+        90,
+        0.1,
+        0.05,
+        0.75,
+        2.5
+    )
+    #backtest_1: half_lif 3 -> 4, z_acceptable 6-> 3
+    #backtest_2: half_life 3 -> 4, z_acceptable 6-> 3, z_entry 2->1.5, z_exit 0.5-> 0
+    backtest_history.to_parquet(f'backtest_month_2026.01_2026.05.parquet')
 
     # backtest = pd.read_parquet('backtest_6.parquet')
     #
