@@ -10,7 +10,7 @@ if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
     period_start = date(2026, 1,1)
-    period_end = date(2026,  5,31)
+    period_end = date(2026, 8,31)
     timeframe = 'M1'
 
 
@@ -19,8 +19,8 @@ if __name__ == '__main__':
         period_start,
         period_end,
         timeframe,
-        1,
         2,
+        3,
         1.5,
         0.5,
         6,
@@ -36,9 +36,8 @@ if __name__ == '__main__':
         0.75,
         2.5
     )
-    #backtest_1: half_lif 3 -> 4, z_acceptable 6-> 3
-    #backtest_2: half_life 3 -> 4, z_acceptable 6-> 3, z_entry 2->1.5, z_exit 0.5-> 0
-    backtest_history.to_parquet(f'backtest_month_2026.01_2026.05_hlm_2.parquet')
+    # signal_z == current_bar
+    backtest_history.to_parquet(f'backtest_2026.01_2026.08_current_signal_is_open.parquet')
 
     # backtest = pd.read_parquet('backtest_6.parquet')
     #

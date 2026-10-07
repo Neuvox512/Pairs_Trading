@@ -199,6 +199,9 @@ def backtest_session(
 
     pairs_parameters = pairs_parameters[pairs_parameters["half_life_minutes"] > min_half_life_minutes]
 
+    if pairs_parameters.empty:
+        return pd.DataFrame()
+
     tradable_data = get_tradable_data(db,pairs_parameters, session_date, timeframe, opening_minutes)
 
     if tradable_data.empty:
@@ -298,7 +301,7 @@ def simulate_trades(
         ask_2 = bid_2  + current_bar.symbol_2_spread * symbol_2_info.point
 
         if i > 0:
-            signal_z_score = prices.iloc[i-1].z_score
+            signal_z_score = prices.iloc[i].z_score
 
             if direction != 0:
                 closing_price_1 = bid_1 if quantity_1 > 0 else ask_1

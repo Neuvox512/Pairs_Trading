@@ -9,8 +9,8 @@ from src.strategies.intraday_strategy.backtest_tools import *
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
-    period_start = date(2025, 11,18)
-    period_end = date(2025, 11,18)
+    period_start = date(2026, 4,6)
+    period_end = date(2026, 4,6)
     timeframe = 'M1'
 
     trading_dates = get_trading_dates(period_start, period_end)
@@ -30,7 +30,7 @@ if __name__ == '__main__':
                 90,
                 0.1,
                 0.05,
-                0.75,
+                1,
                 2.5,
         )
         pd.set_option('display.max_columns', None)
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 pair.hedge_ratio,
                 pair.half_life_minutes,
                 3,
-                1.5,
+                2,
                 0.5,
                 10,
                 1)
