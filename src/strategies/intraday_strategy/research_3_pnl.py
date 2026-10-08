@@ -9,11 +9,11 @@ from src.strategies.intraday_strategy.backtest_tools import *
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
-    period_start = date(2025, 1,1)
-    period_end = date(2026, 1,1)
+    period_start = date(2026, 1,1)
+    period_end = date(2026, 8,31)
     timeframe = 'M1'
 
-    backtest = pd.read_parquet('backtest_2025.01_2026.01_more_candidates.parquet')
+    backtest = pd.read_parquet('backtest_2025.01_2026.08_signal_is_open.parquet')
 
     pnl = calculate_pnl(backtest, period_start, period_end, timeframe, 100)
     pnl_summary = pnl_summary(pnl, 4)

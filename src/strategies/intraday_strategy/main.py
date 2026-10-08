@@ -9,7 +9,7 @@ from src.strategies.intraday_strategy.backtest_tools import *
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
-    period_start = date(2026, 1,1)
+    period_start = date(2025, 1,1)
     period_end = date(2026, 8,31)
     timeframe = 'M1'
 
@@ -20,7 +20,7 @@ if __name__ == '__main__':
         period_end,
         timeframe,
         2,
-        3,
+        6,
         1.5,
         0.5,
         6,
@@ -28,16 +28,16 @@ if __name__ == '__main__':
         10,
         1,
         0.9,
-        0.75,
-        0.25,
+        0.5,
+        0.5,
         90,
         0.1,
         0.05,
         0.75,
         2.5
     )
-    # signal_z == current_bar
-    backtest_history.to_parquet(f'backtest_2026.01_2026.08_current_signal_is_open.parquet')
+    # signal_z == current_bar + more candidates
+    backtest_history.to_parquet(f'backtest_2025.01_2026.08.parquet')
 
     # backtest = pd.read_parquet('backtest_6.parquet')
     #

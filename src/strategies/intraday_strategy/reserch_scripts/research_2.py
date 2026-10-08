@@ -9,8 +9,8 @@ from src.strategies.intraday_strategy.backtest_tools import *
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
-    period_start = date(2025, 11,18)
-    period_end = date(2025, 11,18)
+    period_start = date(2026, 6,12)
+    period_end = date(2026, 6,12)
     timeframe = 'M1'
 
     trading_dates = get_trading_dates(period_start, period_end)
@@ -22,12 +22,12 @@ if __name__ == '__main__':
             db,
             trading_date,
             timeframe,
-                6,
+                10,
                 1,
                 0.9,
                 0.5,
                 0.5,
-                90,
+                120,
                 0.1,
                 0.05,
                 0.75,
@@ -35,7 +35,7 @@ if __name__ == '__main__':
         )
         pd.set_option('display.max_columns', None)
         print(pairs_parameters)
-        tradable_data = get_tradable_data(db, pairs_parameters, trading_date, timeframe, 90)
+        tradable_data = get_tradable_data(db, pairs_parameters, trading_date, timeframe, 120)
 
         pnl = []
 
@@ -50,17 +50,18 @@ if __name__ == '__main__':
                 symbols_info,
                 pair.hedge_ratio,
                 pair.half_life_minutes,
-                3,
-                1.5,
+                8,
+                2.0,
                 0.5,
-                10,
+                6,
                 1)
-
+            tradable_pair_history.to_parquet(f'{pair.first_symbol} and {pair.second_symbol}.parquet')
+            print(tradable_pair_history)
             if not tradable_pair_history.empty:
                 plt.plot(tradable_pair_history.time, tradable_pair_history.z_score)
                 plt.title(f'{pair.first_symbol} - {pair.second_symbol}')
                 plt.show()
-            print(tradable_pair_history)
-            pnl.append(tradable_pair_history['realized_pnl'].iloc[-1])
+                pnl.append(tradable_pair_history['realized_pnl'].iloc[-1])
+
         print(sum(pnl))
 

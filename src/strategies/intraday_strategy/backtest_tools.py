@@ -362,6 +362,7 @@ def simulate_trades(
                 "symbol_1": symbol_1,
                 "symbol_2": symbol_2,
                 "timeframe": timeframe,
+                "half_life" : half_life_minutes,
                 "quantity_1": quantity_1,
                 "quantity_2": quantity_2,
                 "bid_1": bid_1,
