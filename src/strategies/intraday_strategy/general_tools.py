@@ -12,6 +12,44 @@ from src.analysis.pairs_parameters_calculation import (
     calculate_pair_spread_z_score)
 from src.data.market_session import get_session_data
 from decimal import Decimal
+from matplotlib import pyplot as plt
+
+
+def plot_backtest_results(pnl_results : pd.DataFrame) -> None:
+    daily_changes = (
+            pnl_results.groupby('session_date')
+            .agg(session_start_equity = ('equity', 'first'),
+                 session_end_equity = ('equity', 'last'),
+                 daily_drawdown = ('drawdown', 'max'))
+    ).sort_values('session_date').reset_index()
+
+    daily_changes['daily_pnl_pct'] = (
+            (daily_changes['session_end_equity'] - daily_changes['session_start_equity']
+             ) / daily_changes['session_start_equity'] * 100
+    )
+
+    fig, (equity_ax, pnl_ax, drawdown_ax) = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(14, 8))
+
+    equity_ax.plot(
+        daily_changes['session_date'], daily_changes['session_end_equity'], label='Equity', color='green', linewidth=1.1
+    )
+    equity_ax.set_title("Equity Chart")
+    equity_ax.set_ylabel("Equity (USD)")
+    equity_ax.legend()
+    equity_ax.grid(alpha=0.25)
+
+    pnl_ax.bar(daily_changes['session_date'], daily_changes['daily_pnl_pct'])
+    pnl_ax.set_title("Profit & Loss")
+    pnl_ax.set_ylabel("PnL (%)")
+    pnl_ax.grid(alpha=0.25)
+
+    drawdown_ax.bar(daily_changes['session_date'], daily_changes['daily_drawdown'])
+    drawdown_ax.set_ylabel("Drawdown (%)")
+    drawdown_ax.grid(alpha=0.25)
+
+    drawdown_ax.set_xlabel("Date")
+
+    plt.show()
 
 
 def standartize_lot(lot : float | Decimal, symbols_info : pd.Series) -> float | None:
