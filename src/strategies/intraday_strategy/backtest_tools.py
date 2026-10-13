@@ -21,7 +21,6 @@ from src.strategies.intraday_strategy.general_tools import (
     filter_local_pairs_by_z_score)
 from decimal import Decimal
 from tqdm import tqdm
-from matplotlib import pyplot as plt
 
 
 def pnl_summary(calculated_pnl : pd.DataFrame, year_risk_free_rate : float) -> pd.Series:
