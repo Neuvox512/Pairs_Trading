@@ -3,7 +3,17 @@ import pytest
 from src.strategies.intraday_strategy.backtest_tools import simulate_trades
 
 
-def test_simulate_trades(hedge_ratio = 2, entry_z = 2) -> None:
+@pytest.mark.parametrize(
+    "hedge_ratio, entry_z, expected_pnl, half_life",
+    [
+        ( 2,  2, -1.4, 1),
+        ( 2, -2,  3.6, 10),
+        (-2,  2, -0.4, 10),
+        (-2, -2, -0.4, 10),
+    ],
+)
+
+def test_simulate_trades(hedge_ratio, entry_z, expected_pnl, half_life) -> None:
     symbols_info = pd.DataFrame({
         'symbol': ['JPM', 'AAPL'],
         'point' : [0.1, 0.1],
@@ -33,9 +43,9 @@ def test_simulate_trades(hedge_ratio = 2, entry_z = 2) -> None:
         prices,
         'M1',
         symbols_info,
-        2,
-        10,
-        3,
+        hedge_ratio,
+        half_life,
+        1,
         1.5,
         0.5,
         5,
@@ -47,12 +57,27 @@ def test_simulate_trades(hedge_ratio = 2, entry_z = 2) -> None:
     else:
         direction = 1
 
-    assert trades_history['direction'].tolist() == ([0, direction, direction] + [0]*297)
+    assert trades_history['realized_pnl'].iloc[3] == pytest.approx(expected_pnl, abs=0.001)
 
-    assert trades_history['realized_pnl'].iloc[3] == pytest.approx(-4.4, abs=0.001)
-    assert trades_history['realized_pnl'].iloc[3] == trades_history['realized_pnl'].iloc[-1]
+    if half_life > 1:
+        assert trades_history['direction'].tolist() == ([0, direction, direction] + [0]*297)
 
-    assert trades_history['quantity_1'].tolist() == ([0] + 2 * [symbols_info['contract_size'][0] * direction] + [0]*297)
-    assert trades_history['quantity_2'].tolist() == (
-            [0] + 2 * [symbols_info['contract_size'][1] * -direction * hedge_ratio] + [0] * 297
+        assert trades_history['realized_pnl'].iloc[3] == trades_history['realized_pnl'].iloc[-1]
+
+        assert trades_history['quantity_1'].tolist() == ([0] + 2 * [symbols_info['contract_size'][0] * direction] + [0]*297)
+        assert trades_history['quantity_2'].tolist() == (
+                [0] + 2 * [symbols_info['contract_size'][1] * -direction * hedge_ratio] + [0] * 297
     )
+
+    else:
+        assert trades_history['direction'].tolist() == ([0, direction] + [0] * 298)
+
+        assert trades_history['realized_pnl'].iloc[3] == trades_history['realized_pnl'].iloc[-1]
+
+        assert trades_history['quantity_1'].tolist() == (
+                    [0] + 1 * [symbols_info['contract_size'][0] * direction] + [0] * 298)
+        assert trades_history['quantity_2'].tolist() == (
+                [0] + 1 * [symbols_info['contract_size'][1] * -direction * hedge_ratio] + [0] * 298
+        )
+
+    # print(trades_history.head(10)
