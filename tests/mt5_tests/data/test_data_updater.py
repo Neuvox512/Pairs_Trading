@@ -10,7 +10,7 @@ def test_update_data(tmp_path) -> None:
     terminal = MT5Terminal()
     terminal.connect()
 
-    latest_bar_time_from_mt5 = terminal.get_latest_closed_bar_time(symbol="JPM", timeframe="M1")
+    latest_bar_time_from_mt5 = terminal.get_latest_closed_bar_time(symbol="JPM.US", timeframe="M1")
 
     assert latest_bar_time_from_mt5 is not None
 
@@ -18,8 +18,8 @@ def test_update_data(tmp_path) -> None:
 
     updated_count = update_symbol(
         terminal=terminal,
-        database=db,
-        symbol="JPM",
+        db = db,
+        symbol="JPM.US",
         timeframe="M1",
         start_time=start_time)
 

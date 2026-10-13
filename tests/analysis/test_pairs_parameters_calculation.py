@@ -33,7 +33,7 @@ def test_calculate_pair_parameters(sim_close_prices) -> None:
     assert params['hedge_ratio'].iloc[0]  == pytest.approx(hedge_ratio, abs=0.005)
     assert params ['spread_mean'].iloc[0] == pytest.approx(spread.mean(), abs=0.005)
     assert params['spread_std'].iloc[0] == pytest.approx(spread.std(), abs=0.005)
-    assert params['half_life_(minutes)'].iloc[0] == pytest.approx(half_life, abs=0.005)
+    assert params['half_life_minutes'].iloc[0] == pytest.approx(half_life, abs=0.005)
 
 
 def test_calculate_spread_half_life() -> None:

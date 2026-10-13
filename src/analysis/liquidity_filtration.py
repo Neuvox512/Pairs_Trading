@@ -4,7 +4,6 @@ from src.data.sqlite_db import SQLiteDB
 from src.data.market_session import get_full_session_bar_range, get_trading_dates
 from src.data.timeframes import TIME_FREQUENCIES
 from tqdm import tqdm
-from matplotlib import pyplot as plt
 
 
 def filter_symbols_by_liquidity(
@@ -34,20 +33,6 @@ def get_liquidity_params_quantiles(symbols_liquidity_quality : pd.DataFrame) -> 
     quantiles.rename_axis('quantile', inplace=True)
 
     return quantiles
-
-
-def show_liquidity_params_distribution(symbols_liquidity_quality : pd.DataFrame) -> None:
-    fig, ax = plt.subplots(1,3, figsize = (12,7))
-    ax[0].hist(symbols_liquidity_quality['avg_tick_volume'], bins = 50)
-    ax[0].set_title('Average daily tick volume')
-
-    ax[1].hist(symbols_liquidity_quality['coverage_pct'], bins = 50)
-    ax[1].set_title('Coverage (%)')
-
-    ax[2].hist(symbols_liquidity_quality['avg_spread_pct'], bins = 50)
-    ax[2].set_title('Average spread (%)')
-
-    plt.show()
 
 
 def get_historical_symbols_quality(

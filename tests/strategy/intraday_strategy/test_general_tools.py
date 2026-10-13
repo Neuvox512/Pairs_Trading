@@ -22,6 +22,8 @@ def test_get_pairs_parameters(sim_db) -> None:
     assert len(params) == 2
 
 def test_confirm_local_candidate_pairs(sim_db) -> None:
+    symbols = ["first_i1", "second_i1", "indep_i1", "stationary"]
+
     candidate_pairs = pd.DataFrame(
         {
             'first_symbol': ['first_i1', 'indep_i1', 'stationary'],
@@ -31,7 +33,9 @@ def test_confirm_local_candidate_pairs(sim_db) -> None:
     timeframe = "M1"
     session_date = date(2026, 8, 3)
 
-    loc_candidate_pairs = confirm_local_candidate_pairs(sim_db, candidate_pairs, timeframe, session_date)
+    local_prices = get_local_prices(sim_db, symbols, session_date, timeframe, opening_minutes=90)
+
+    loc_candidate_pairs = confirm_local_candidate_pairs(candidate_pairs, local_prices, 0.05)
 
     assert len(loc_candidate_pairs) == 1
     assert loc_candidate_pairs.iloc[0]['first_symbol'] == 'first_i1'

@@ -78,7 +78,7 @@ def test_get_last_bar(tmp_path, sim_bars) -> None:
     assert latest_bar == sim_bars['time_utc'].iloc[-1]
 
 
-def test_load_close_prices(tmp_path, sim_bars) -> None:
+def test_load_market_data(tmp_path, sim_bars) -> None:
     database = SQLiteDB(tmp_path / "test_db.db")
     database.create_table()
     database.save_bars("JPM", "M1", sim_bars)
