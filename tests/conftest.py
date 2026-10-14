@@ -79,3 +79,14 @@ def sim_bars() -> pd.DataFrame:
             "real_volume": [0, 0],
         }
     )
+
+@pytest.fixture
+def sim_symbols() -> pd.DataFrame:
+    return pd.DataFrame({
+        "symbol": ["JPM"],
+        'point': [0.01],
+        'contract_size': [1],
+        'volume_min': [1],
+        'volume_max': [1000],
+        'volume_step': [1],
+    })

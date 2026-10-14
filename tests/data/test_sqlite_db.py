@@ -78,33 +78,41 @@ def test_get_last_bar(tmp_path, sim_bars) -> None:
     assert latest_bar == sim_bars['time_utc'].iloc[-1]
 
 
-def test_load_market_data(tmp_path, sim_bars) -> None:
+def test_load_market_data(tmp_path, sim_bars, sim_symbols) -> None:
     database = SQLiteDB(tmp_path / "test_db.db")
     database.create_table()
+    database.create_symbols_table()
     database.save_bars("JPM", "M1", sim_bars)
+    database.save_symbols(sim_symbols)
 
     start_time = sim_bars["time_utc"].iloc[-2]
     end_time = sim_bars["time_utc"].iloc[-1]
 
-    close_prices = database.load_market_data(symbols=["JPM"], timeframe="M1", start_time=start_time, end_time=end_time)
+    market_data = database.load_market_data(symbols=["JPM"], timeframe="M1", start_time=start_time, end_time=end_time)
 
-    assert len(close_prices) == 2
-    assert list(close_prices.columns) == ["JPM"]
+    assert len(market_data) == 2
+    assert list(market_data.columns) == [('close', 'JPM'), ('spread', 'JPM')]
 
 
-def test_load_quality_data(tmp_path, sim_bars) -> None:
+def test_load_quality_data(tmp_path, sim_bars, sim_symbols) -> None:
     database = SQLiteDB(tmp_path / "test_db.db")
     database.create_table()
+    database.create_symbols_table()
+
     database.save_bars("JPM", "M1", sim_bars)
+
+    database.save_symbols(sim_symbols)
 
     start_time = sim_bars["time_utc"].iloc[-2]
     end_time = sim_bars["time_utc"].iloc[-1]
 
     quality_data = database.load_quality_data(
-        symbols=["JPM"],
         timeframe="M1",
         start_time=start_time,
         end_time=end_time,
     )
 
-    assert list(quality_data.columns) == ['symbol', 'time_utc', 'close', 'spread', 'tick_volume']
+    assert list(quality_data.columns) == ["symbol", "time_utc", "close", "spread", "tick_volume", "point"]
+    assert len(quality_data) == 2
+    assert quality_data["symbol"].eq("JPM").all()
+    assert quality_data["point"].eq(0.01).all()
