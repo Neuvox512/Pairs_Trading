@@ -6,6 +6,7 @@ import pandas as pd
 from src.analysis.backtest_metrics import pnl_summary, calculate_pnl
 from src.strategies.intraday_strategy.backtest_tools import backtest_period
 
+
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
@@ -36,11 +37,5 @@ if __name__ == '__main__':
         0.75,
         2.5
     )
-    # signal_z == current_bar + more candidates + 6_min_hlm + 120_min_opening
+    
     backtest_history.to_parquet(f'backtest_2025.01_2026.08.parquet')
-
-    # backtest = pd.read_parquet('backtest_6.parquet')
-    #
-    # pnl = calculate_pnl(backtest, period_start, period_end, timeframe, 100)
-    # pnl_summary = pnl_summary(pnl, 4)
-    # print(pnl_summary)

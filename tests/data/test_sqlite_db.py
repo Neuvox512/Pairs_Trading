@@ -78,12 +78,10 @@ def test_get_last_bar(tmp_path, sim_bars) -> None:
     assert latest_bar == sim_bars['time_utc'].iloc[-1]
 
 
-def test_load_market_data(tmp_path, sim_bars, sim_symbols) -> None:
+def test_load_market_data(tmp_path, sim_bars) -> None:
     database = SQLiteDB(tmp_path / "test_db.db")
     database.create_table()
-    database.create_symbols_table()
     database.save_bars("JPM", "M1", sim_bars)
-    database.save_symbols(sim_symbols)
 
     start_time = sim_bars["time_utc"].iloc[-2]
     end_time = sim_bars["time_utc"].iloc[-1]
@@ -92,6 +90,8 @@ def test_load_market_data(tmp_path, sim_bars, sim_symbols) -> None:
 
     assert len(market_data) == 2
     assert list(market_data.columns) == [('close', 'JPM'), ('spread', 'JPM')]
+    assert market_data["close"]["JPM"].tolist() == sim_bars["close"].tolist()
+    assert market_data["spread"]["JPM"].tolist() == sim_bars["spread"].tolist()
 
 
 def test_load_quality_data(tmp_path, sim_bars, sim_symbols) -> None:

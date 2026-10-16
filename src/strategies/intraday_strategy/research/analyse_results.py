@@ -10,12 +10,12 @@ from src.analysis.visualization import plot_pnl_results
 if __name__ == '__main__':
     path = SQLITE_DB_PATH
     db = SQLiteDB(Path(path))
+    timeframe = 'M1'
     period_start = date(2025, 1,1)
     period_end = date(2026, 8,31)
-    timeframe = 'M1'
 
     backtest = pd.read_parquet(
-        '../backtest_results/signal_is_close/more_candidates/120_opening_minutes/backtest_2025.01_2026.08_signal_is_open.parquet'
+        '../backtest_results/signal_is_close/more_candidates/6_hlm/120_opening_minutes/backtest_2025.01_2026.08.parquet'
     )
 
     pnl = calculate_pnl(backtest, period_start, period_end, timeframe, 100)

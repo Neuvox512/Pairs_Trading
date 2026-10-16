@@ -1,13 +1,9 @@
 from datetime import date
-
-import matplotlib
-
 from src.data.sqlite_db import SQLiteDB
 from src.config import SQLITE_DB_PATH
 from pathlib import Path
 import pandas as pd
-from src.strategies.intraday_strategy.backtest_tools import (
-    backtest_period, simulate_trades, prepare_trading_day, get_tradable_data)
+from src.strategies.intraday_strategy.backtest_tools import simulate_trades, prepare_trading_day, get_tradable_data
 from src.data.market_session import get_trading_dates
 from matplotlib import pyplot as plt
 

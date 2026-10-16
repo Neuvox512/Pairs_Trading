@@ -23,7 +23,7 @@ def test_update_data(tmp_path) -> None:
         timeframe="M1",
         start_time=start_time)
 
-    latest_bar_time_from_db = db.get_latest_bar_time(symbol="JPM", timeframe="M1")
+    latest_bar_time_from_db = db.get_latest_bar_time(symbol="JPM.US", timeframe="M1")
 
     assert updated_count > 0
     assert latest_bar_time_from_db == latest_bar_time_from_mt5

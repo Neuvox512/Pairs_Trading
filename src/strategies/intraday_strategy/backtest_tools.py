@@ -45,6 +45,7 @@ def backtest_period(
         local_fdr_level: float = 0.05,
         max_abs_local_mean: float = 1,
         max_abs_last_local_z_score: float = 3.0,
+        cutoff_bars: int = 60,
 ) -> pd.DataFrame:
 
     trading_dates = get_trading_dates(start_date, end_date)
@@ -72,7 +73,8 @@ def backtest_period(
             global_fdr_level,
             local_fdr_level,
             max_abs_local_mean,
-            max_abs_last_local_z_score
+            max_abs_last_local_z_score,
+            cutoff_bars,
         )
 
         if not session_bt_history.empty:
@@ -107,6 +109,7 @@ def backtest_session(
         local_fdr_level: float = 0.05,
         max_abs_local_mean: float = 1,
         max_abs_last_local_z_score: float = 3.0,
+        cutoff_bars: int = 60,
 ) -> pd.DataFrame:
 
     pairs_parameters = prepare_trading_day(
@@ -155,7 +158,9 @@ def backtest_session(
             entry_z_score,
             exit_z_score,
             acceptable_z_score,
-            base_lot)
+            base_lot,
+            cutoff_bars,
+        )
 
         if not tradable_pair_history.empty:
             tradable_pairs_history.append(tradable_pair_history)
@@ -180,7 +185,8 @@ def simulate_trades(
         entry_z_score : float = 2.0,
         exit_z_score : float = 0.5,
         acceptable_z_score : float = 4.5,
-        base_lot : float = 1.0
+        base_lot : float = 1.0,
+        cutoff_bars: int = 60,
 ) -> pd.DataFrame:
 
     if tradable_pairs_data.empty:
@@ -192,6 +198,8 @@ def simulate_trades(
                           'Acceptable-Z-score should be greater than Entry-Z-score')
     if half_life_multiplier <= 0:
         raise ValueError (f'Holding-multiplier should be positive')
+    if cutoff_bars < 1:
+        raise ValueError("cutoff_bars must be at least 1")
 
     prices = tradable_pairs_data.sort_values('time').reset_index(drop=True)
     symbol_1 = prices['symbol_1'].iloc[0]
@@ -212,7 +220,7 @@ def simulate_trades(
     if lot_2 is None:
         return pd.DataFrame()
     stop_loss_time = half_life_minutes * half_life_multiplier
-    last_bar = len(prices) - 60
+    last_bar = max(0, len(prices) - cutoff_bars)
 
     direction = 0
     unrealized_pnl, realized_pnl = 0, 0
